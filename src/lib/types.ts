@@ -1,0 +1,119 @@
+// --- State (from .claude/state.json) ---
+
+export interface ProjectState {
+  project: string
+  updatedAt: string
+  features: Feature[]
+  decisions: {
+    pending: number
+    validated: number
+    rejected: number
+  }
+  lastSession: {
+    date: string | null
+    branch: string | null
+    lastAction: string | null
+    nextStep: string | null
+  }
+}
+
+export interface Feature {
+  slug: string
+  status: 'planning' | 'in-progress' | 'shipped'
+  prd: string | null
+  ralph: {
+    active: boolean
+    branch: string | null
+    storiesTotal: number
+    storiesDone: number
+  }
+  audit: {
+    lastDate: string | null
+    score: number | null
+    blockers: number
+  }
+  pr: number | null
+  shipped: boolean
+}
+
+// --- Sessions (from ~/.claude/history.jsonl) ---
+
+export interface SessionEntry {
+  display: string
+  timestamp: number
+  project: string
+  sessionId: string
+}
+
+// --- Agent messages (from subagent JSONL files) ---
+
+export interface AgentMessage {
+  type: 'user' | 'assistant'
+  sessionId: string
+  version: string
+  gitBranch: string
+  agentId: string
+  timestamp: string
+  message: {
+    role: string
+    content: string | Array<{ type: string; text?: string }>
+    model?: string
+    usage?: {
+      input_tokens: number
+      output_tokens: number
+    }
+  }
+}
+
+// --- Tasks (from ~/.claude/tasks/{team-uuid}/*.json) ---
+
+export interface Task {
+  id: string
+  subject: string
+  description: string
+  activeForm: string
+  status: 'pending' | 'in_progress' | 'completed' | 'deleted'
+  owner: string
+  blocks: string[]
+  blockedBy: string[]
+}
+
+// --- Vault entries (parsed from vault/**/*.md) ---
+
+export interface VaultEntry {
+  title: string
+  date: string
+  type: 'idea' | 'decision' | 'insight' | 'research' | 'journal' | 'unknown'
+  status?: string
+  content: string
+  path: string
+}
+
+// --- Aggregated project data ---
+
+export interface Project {
+  name: string
+  path: string
+  encodedPath: string
+  state: ProjectState | null
+  recentSessions: SessionEntry[]
+  vaultEntries: VaultEntry[]
+  features: Feature[]
+}
+
+// --- Dashboard metrics ---
+
+export interface DashboardMetrics {
+  totalProjects: number
+  totalFeatures: number
+  activeFeatures: number
+  shippedFeatures: number
+  pendingDecisions: number
+  totalSessions: number
+  recentSessions: SessionEntry[]
+  tokenUsage: {
+    date: string
+    input: number
+    output: number
+  }[]
+}
