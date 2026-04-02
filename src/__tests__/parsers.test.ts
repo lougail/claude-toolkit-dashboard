@@ -69,7 +69,30 @@ describe('parseState', () => {
     await mkdir(join(projectDir, '.claude'), { recursive: true })
     await writeFile(
       join(projectDir, '.claude', 'state.json'),
-      JSON.stringify({ project: '{{PROJECT_NAME}}', features: [], decisions: {} })
+      JSON.stringify({
+        project: '{{PROJECT_NAME}}',
+        updatedAt: '2026-04-01',
+        features: [],
+        decisions: { pending: 0, validated: 0, rejected: 0 },
+        lastSession: { date: null, branch: null, lastAction: null, nextStep: null },
+      })
+    )
+
+    const state = await parseState(projectDir)
+    expect(state).toBeNull()
+  })
+
+  it('returns null when updatedAt or lastSession is missing', async () => {
+    const projectDir = join(TEST_DIR, 'project-missing-fields')
+    await mkdir(join(projectDir, '.claude'), { recursive: true })
+    await writeFile(
+      join(projectDir, '.claude', 'state.json'),
+      JSON.stringify({
+        project: 'test',
+        features: [],
+        decisions: { pending: 0, validated: 0, rejected: 0 },
+        // missing updatedAt and lastSession
+      })
     )
 
     const state = await parseState(projectDir)

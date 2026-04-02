@@ -45,9 +45,14 @@ describe('decodeProjectPath', () => {
     expect(await decodeProjectPath('Users-louis')).toBeNull()
   })
 
-  it('returns null for too-short decoded paths', async () => {
-    // "-x" decodes to "/x" — only 1 segment, rejected as unsafe
+  it('returns null for too-short decoded paths (1 segment)', async () => {
+    // "-x" decodes to "/x" — only 1 segment, needs >= 3
     expect(await decodeProjectPath('-x')).toBeNull()
+  })
+
+  it('returns null for too-short decoded paths (2 segments)', async () => {
+    // "-Users-louis" decodes to "/Users/louis" — only 2 segments, needs >= 3
+    expect(await decodeProjectPath('-Users-louis')).toBeNull()
   })
 
   it('decodes a simple path without hyphens', async () => {

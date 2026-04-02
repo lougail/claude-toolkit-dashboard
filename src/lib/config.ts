@@ -51,7 +51,7 @@ export async function decodeProjectPath(encoded: string): Promise<string | null>
   // Safety: reject paths that decode to dangerous locations
   // Valid project paths should have at least 3 segments (e.g. /Users/x/project)
   const segments = result.split('/').filter(Boolean)
-  if (segments.length < 2) return null
+  if (segments.length < 3) return null
 
   return result
 }

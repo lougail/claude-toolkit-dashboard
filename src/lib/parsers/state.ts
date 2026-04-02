@@ -13,8 +13,10 @@ function isProjectState(v: unknown): v is ProjectState {
   const d = v as Record<string, unknown>
   if (typeof d.project !== 'string') return false
   if (d.project.includes('{{')) return false // template placeholder
+  if (typeof d.updatedAt !== 'string') return false
   if (!Array.isArray(d.features)) return false
   if (!d.decisions || typeof d.decisions !== 'object') return false
+  if (!d.lastSession || typeof d.lastSession !== 'object') return false
   return true
 }
 

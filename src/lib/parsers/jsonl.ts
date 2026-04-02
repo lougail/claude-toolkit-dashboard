@@ -14,12 +14,10 @@ function isSessionEntry(v: unknown): v is SessionEntry {
 function isAgentMessage(v: unknown): v is AgentMessage {
   if (!v || typeof v !== 'object') return false
   const m = v as Record<string, unknown>
-  return (
-    typeof m.sessionId === 'string' &&
-    typeof m.timestamp === 'string' &&
-    m.message !== null &&
-    typeof m.message === 'object'
-  )
+  if (typeof m.sessionId !== 'string' || typeof m.timestamp !== 'string') return false
+  if (!m.message || typeof m.message !== 'object') return false
+  const msg = m.message as Record<string, unknown>
+  return typeof msg.role === 'string'
 }
 
 /**

@@ -169,43 +169,7 @@ export async function collectAgentMessages(
   const allMessages: AgentMessage[] = []
 
   try {
-    const projectDirs = await readdir(PROJECTS_DIR, { withFileTypes: true })
-
-    for (const projectDir of projectDirs) {
-      if (!projectDir.isDirectory()) continue
-      const projectPath = join(PROJECTS_DIR, projectDir.name)
-
-      const sessionDirs = await readdir(projectPath, {
-        withFileTypes: true,
-      }).catch(() => [])
-
-      for (const sessionDir of sessionDirs) {
-        if (!sessionDir.isDirectory()) continue
-        const subagentsPath = join(projectPath, sessionDir.name, 'subagents')
-
-        if (!(await exists(subagentsPath))) continue
-
-        const agentFiles = await readdir(subagentsPath).catch(() => [])
-
-        for (const agentFile of agentFiles) {
-          if (!agentFile.endsWith('.jsonl')) continue
-
-          const filePath = join(subagentsPath, agentFile)
-          const fileStat = await stat(filePath).catch(() => null)
-
-          // Skip old files
-          if (fileStat && fileStat.mtimeMs < cutoff) continue
-
-          const messages = await parseAgentMessages(filePath)
-          allMessages.push(...messages)
-
-          // Cap memory usage
-          if (allMessages.length >= MAX_AGENT_MESSAGES) break
-        }
-        if (allMessages.length >= MAX_AGENT_MESSAGES) break
-      }
-      if (allMessages.length >= MAX_AGENT_MESSAGES) break
-    }
+    await scanAgentFiles(cutoff, allMessages)
   } catch {
     // gracefully handle
   }
@@ -213,18 +177,64 @@ export async function collectAgentMessages(
   return allMessages
 }
 
+async function scanAgentFiles(
+  cutoff: number,
+  out: AgentMessage[]
+): Promise<void> {
+  const projectDirs = await readdir(PROJECTS_DIR, { withFileTypes: true })
+
+  for (const projectDir of projectDirs) {
+    if (!projectDir.isDirectory()) continue
+    const projectPath = join(PROJECTS_DIR, projectDir.name)
+
+    const sessionDirs = await readdir(projectPath, {
+      withFileTypes: true,
+    }).catch(() => [])
+
+    for (const sessionDir of sessionDirs) {
+      if (!sessionDir.isDirectory()) continue
+      const subagentsPath = join(projectPath, sessionDir.name, 'subagents')
+
+      if (!(await exists(subagentsPath))) continue
+
+      const agentFiles = await readdir(subagentsPath).catch(() => [])
+
+      for (const agentFile of agentFiles) {
+        if (!agentFile.endsWith('.jsonl')) continue
+
+        const filePath = join(subagentsPath, agentFile)
+        const fileStat = await stat(filePath).catch(() => null)
+
+        if (fileStat && fileStat.mtimeMs < cutoff) continue
+
+        const messages = await parseAgentMessages(filePath)
+        out.push(...messages)
+
+        if (out.length >= MAX_AGENT_MESSAGES) return
+      }
+    }
+  }
+}
+
 /**
  * Build dashboard metrics from all available data.
  * Accepts pre-loaded projects to avoid redundant filesystem scans.
+ * When preloadedProjects is provided, session counts are derived from
+ * the already-enriched project.recentSessions (set by discoverProjects).
  */
 export async function getDashboardMetrics(
   preloadedProjects?: Project[]
 ): Promise<DashboardMetrics> {
-  const [projects, allSessions, agentMessages] = await Promise.all([
+  const [projects, agentMessages] = await Promise.all([
     preloadedProjects ?? discoverProjects(),
-    parseHistory(HISTORY_FILE),
     collectAgentMessages(30),
   ])
+
+  // When projects are preloaded, derive sessions from them to avoid
+  // re-parsing history.jsonl. Only parse fresh if no preloaded projects.
+  const allSessions = preloadedProjects
+    ? deduplicateSessions(projects.flatMap((p) => p.recentSessions))
+    : await parseHistory(HISTORY_FILE)
 
   const allFeatures = projects.flatMap((p) => p.features)
 
@@ -242,4 +252,15 @@ export async function getDashboardMetrics(
     recentSessions: allSessions.slice(0, 50),
     tokenUsage: aggregateTokenUsage(agentMessages),
   }
+}
+
+function deduplicateSessions(sessions: SessionEntry[]): SessionEntry[] {
+  const seen = new Set<string>()
+  return sessions
+    .filter((s) => {
+      if (seen.has(s.sessionId)) return false
+      seen.add(s.sessionId)
+      return true
+    })
+    .sort((a, b) => b.timestamp - a.timestamp)
 }
