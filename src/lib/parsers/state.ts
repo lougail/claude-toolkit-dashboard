@@ -31,10 +31,11 @@ export async function parseState(projectPath: string): Promise<ProjectState | nu
 
     if (!isProjectState(data)) return null
 
-    // Filter out malformed features
-    data.features = data.features.filter(isFeature)
-
-    return data
+    // Reconstruct with validated features only
+    return {
+      ...data,
+      features: data.features.filter(isFeature),
+    }
   } catch {
     return null
   }

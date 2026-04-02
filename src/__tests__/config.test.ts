@@ -1,5 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { projectName } from '@/lib/config'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { mkdir, rm } from 'node:fs/promises'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
+import { projectName, decodeProjectPath } from '@/lib/config'
 
 describe('projectName', () => {
   it('extracts last segment from a path', () => {
@@ -16,10 +19,47 @@ describe('projectName', () => {
 })
 
 describe('decodeProjectPath', () => {
-  // We test via integration since it needs filesystem access
-  // The greedy algorithm is tested indirectly through scanner tests
-  it('is exported as async function', async () => {
-    const { decodeProjectPath } = await import('@/lib/config')
-    expect(typeof decodeProjectPath).toBe('function')
+  const TEST_ROOT = join(tmpdir(), 'decode-test-' + Date.now())
+
+  beforeAll(async () => {
+    // Create a realistic directory tree:
+    // /tmp/decode-test-XXX/Users/louis/Developer/hello-mira/
+    // /tmp/decode-test-XXX/Users/louis/Developer/simple/
+    await mkdir(join(TEST_ROOT, 'Users', 'louis', 'Developer', 'hello-mira'), { recursive: true })
+    await mkdir(join(TEST_ROOT, 'Users', 'louis', 'Developer', 'simple'), { recursive: true })
+  })
+
+  afterAll(async () => {
+    await rm(TEST_ROOT, { recursive: true, force: true })
+  })
+
+  it('returns null for empty string', async () => {
+    expect(await decodeProjectPath('')).toBeNull()
+  })
+
+  it('returns null for single dash', async () => {
+    expect(await decodeProjectPath('-')).toBeNull()
+  })
+
+  it('returns null for invalid encoded path (no leading dash)', async () => {
+    expect(await decodeProjectPath('Users-louis')).toBeNull()
+  })
+
+  it('returns null for too-short decoded paths', async () => {
+    // "-x" decodes to "/x" — only 1 segment, rejected as unsafe
+    expect(await decodeProjectPath('-x')).toBeNull()
+  })
+
+  it('decodes a simple path without hyphens', async () => {
+    // Build encoded path relative to our test root
+    const encoded = TEST_ROOT.replace(/\//g, '-') + '-Users-louis-Developer-simple'
+    const result = await decodeProjectPath(encoded)
+    expect(result).toBe(join(TEST_ROOT, 'Users', 'louis', 'Developer', 'simple'))
+  })
+
+  it('preserves hyphens in project folder name', async () => {
+    const encoded = TEST_ROOT.replace(/\//g, '-') + '-Users-louis-Developer-hello-mira'
+    const result = await decodeProjectPath(encoded)
+    expect(result).toBe(join(TEST_ROOT, 'Users', 'louis', 'Developer', 'hello-mira'))
   })
 })

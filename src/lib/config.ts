@@ -26,8 +26,10 @@ async function isDirectory(path: string): Promise<boolean> {
  * The challenge: "-" is ambiguous (directory separator vs literal hyphen).
  * We resolve by greedily checking which segments exist as directories.
  */
-export async function decodeProjectPath(encoded: string): Promise<string> {
-  // Remove leading dash (root /)
+export async function decodeProjectPath(encoded: string): Promise<string | null> {
+  // Validate input: must start with "-" and have meaningful content
+  if (!encoded.startsWith('-') || encoded.length < 2) return null
+
   const raw = encoded.slice(1)
   const parts = raw.split('-')
 
@@ -44,8 +46,14 @@ export async function decodeProjectPath(encoded: string): Promise<string> {
     }
   }
 
-  // Final path: currentPath + last segment (the project folder itself)
-  return currentPath + segment
+  const result = currentPath + segment
+
+  // Safety: reject paths that decode to dangerous locations
+  // Valid project paths should have at least 3 segments (e.g. /Users/x/project)
+  const segments = result.split('/').filter(Boolean)
+  if (segments.length < 2) return null
+
+  return result
 }
 
 /**

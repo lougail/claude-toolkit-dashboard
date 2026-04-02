@@ -22,10 +22,8 @@ import { formatRelativeTime, cn } from '@/lib/utils'
 export const dynamic = 'force-dynamic'
 
 export default async function OverviewPage() {
-  const [metrics, projects] = await Promise.all([
-    getDashboardMetrics(),
-    discoverProjects(),
-  ])
+  const projects = await discoverProjects()
+  const metrics = await getDashboardMetrics(projects)
 
   // Load steering for the first project (or current project)
   const firstProject = projects[0]
@@ -249,7 +247,7 @@ export default async function OverviewPage() {
                   </span>
                 </div>
                 {/* Health details */}
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-2 mt-2" role="list" aria-label="Project health checks">
                   {[
                     { label: 'state', ok: project.health.hasState },
                     { label: 'vault', ok: project.health.hasVault },
@@ -258,6 +256,8 @@ export default async function OverviewPage() {
                   ].map(({ label, ok }) => (
                     <span
                       key={label}
+                      role="listitem"
+                      aria-label={`${label}: ${ok ? 'configuré' : 'manquant'}`}
                       className={cn(
                         'text-[10px]',
                         ok ? 'text-emerald-600' : 'text-zinc-700'

@@ -4,13 +4,22 @@ import type { SessionEntry, AgentMessage } from '@/lib/types'
 function isSessionEntry(v: unknown): v is SessionEntry {
   if (!v || typeof v !== 'object') return false
   const e = v as Record<string, unknown>
-  return typeof e.timestamp === 'number' && typeof e.sessionId === 'string'
+  return (
+    typeof e.timestamp === 'number' &&
+    typeof e.sessionId === 'string' &&
+    typeof e.project === 'string'
+  )
 }
 
 function isAgentMessage(v: unknown): v is AgentMessage {
   if (!v || typeof v !== 'object') return false
   const m = v as Record<string, unknown>
-  return typeof m.sessionId === 'string' && typeof m.timestamp === 'string'
+  return (
+    typeof m.sessionId === 'string' &&
+    typeof m.timestamp === 'string' &&
+    m.message !== null &&
+    typeof m.message === 'object'
+  )
 }
 
 /**

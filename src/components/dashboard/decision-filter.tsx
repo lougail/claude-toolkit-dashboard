@@ -99,6 +99,7 @@ export function DecisionFilter({ entries }: DecisionFilterProps) {
         <div className="flex flex-wrap gap-2 mb-6" role="group" aria-label="Filter by type">
           <button
             onClick={() => setActiveFilter(null)}
+            aria-pressed={activeFilter === null}
             className={cn(
               'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors',
               activeFilter === null
@@ -116,6 +117,7 @@ export function DecisionFilter({ entries }: DecisionFilterProps) {
               <button
                 key={type}
                 onClick={() => setActiveFilter(isActive ? null : type)}
+                aria-pressed={isActive}
                 className={cn(
                   'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors',
                   isActive

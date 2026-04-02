@@ -19,6 +19,16 @@ import type {
   Task,
 } from '@/lib/types'
 
+function isTask(v: unknown): v is Task {
+  if (!v || typeof v !== 'object') return false
+  const t = v as Record<string, unknown>
+  return (
+    typeof t.id === 'string' &&
+    typeof t.subject === 'string' &&
+    typeof t.status === 'string'
+  )
+}
+
 async function exists(path: string): Promise<boolean> {
   try {
     await access(path)
@@ -37,10 +47,14 @@ export async function discoverProjects(): Promise<Project[]> {
   const entries = await readdir(PROJECTS_DIR, { withFileTypes: true })
   const projectDirs = entries.filter((e) => e.isDirectory())
 
-  const projects = await Promise.all(
+  const projectResults = await Promise.all(
     projectDirs.map(async (dir) => {
       const encodedPath = dir.name
       const decodedPath = await decodeProjectPath(encodedPath)
+
+      // Skip entries that failed to decode (invalid encoding)
+      if (!decodedPath) return null
+
       const name = projectName(decodedPath)
 
       // Try to read state.json from the actual project directory
@@ -85,6 +99,8 @@ export async function discoverProjects(): Promise<Project[]> {
     })
   )
 
+  const projects = projectResults.filter((p): p is NonNullable<typeof p> => p !== null)
+
   // Enrich with session data from history
   const allSessions = await parseHistory(HISTORY_FILE)
 
@@ -124,8 +140,8 @@ export async function readTasks(): Promise<Task[]> {
           const { readFile } = await import('node:fs/promises')
           const raw = await readFile(join(teamPath, file), 'utf-8')
           const data: unknown = JSON.parse(raw)
-          if (data && typeof data === 'object' && 'id' in data && 'status' in data) {
-            tasks.push(data as Task)
+          if (isTask(data)) {
+            tasks.push(data)
           }
         } catch {
           // skip invalid files
@@ -142,6 +158,8 @@ export async function readTasks(): Promise<Task[]> {
 /**
  * Collect all agent messages across all project sessions for token usage
  */
+const MAX_AGENT_MESSAGES = 50_000
+
 export async function collectAgentMessages(
   limitDays = 30
 ): Promise<AgentMessage[]> {
@@ -180,8 +198,13 @@ export async function collectAgentMessages(
 
           const messages = await parseAgentMessages(filePath)
           allMessages.push(...messages)
+
+          // Cap memory usage
+          if (allMessages.length >= MAX_AGENT_MESSAGES) break
         }
+        if (allMessages.length >= MAX_AGENT_MESSAGES) break
       }
+      if (allMessages.length >= MAX_AGENT_MESSAGES) break
     }
   } catch {
     // gracefully handle
@@ -191,11 +214,14 @@ export async function collectAgentMessages(
 }
 
 /**
- * Build dashboard metrics from all available data
+ * Build dashboard metrics from all available data.
+ * Accepts pre-loaded projects to avoid redundant filesystem scans.
  */
-export async function getDashboardMetrics(): Promise<DashboardMetrics> {
+export async function getDashboardMetrics(
+  preloadedProjects?: Project[]
+): Promise<DashboardMetrics> {
   const [projects, allSessions, agentMessages] = await Promise.all([
-    discoverProjects(),
+    preloadedProjects ?? discoverProjects(),
     parseHistory(HISTORY_FILE),
     collectAgentMessages(30),
   ])

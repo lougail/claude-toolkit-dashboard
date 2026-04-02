@@ -11,10 +11,10 @@ export function formatRelativeTime(timestamp: number): string {
   const hours = Math.floor(diff / 3_600_000)
   const days = Math.floor(diff / 86_400_000)
 
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  if (hours < 24) return `${hours}h ago`
-  if (days < 7) return `${days}d ago`
+  if (minutes < 1) return 'à l\'instant'
+  if (minutes < 60) return `il y a ${minutes}min`
+  if (hours < 24) return `il y a ${hours}h`
+  if (days < 7) return `il y a ${days}j`
   return new Date(timestamp).toLocaleDateString('fr-FR')
 }
 

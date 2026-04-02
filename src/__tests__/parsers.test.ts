@@ -124,7 +124,7 @@ describe('parseHistory', () => {
     const lines = [
       JSON.stringify({ display: 'Good', timestamp: 1000, project: '/test', sessionId: 's1' }),
       '{broken json',
-      JSON.stringify({ noTimestamp: true, sessionId: 'bad' }), // missing timestamp
+      JSON.stringify({ noTimestamp: true, sessionId: 'bad', project: '/x' }), // missing timestamp
       '',
     ]
     await writeFile(file, lines.join('\n'))
@@ -169,8 +169,9 @@ describe('parseAgentMessages', () => {
   it('skips entries missing required fields', async () => {
     const file = join(TEST_DIR, 'agent-bad.jsonl')
     const lines = [
-      JSON.stringify({ sessionId: 's1', timestamp: '2026-04-01' }), // valid
-      JSON.stringify({ noSessionId: true, timestamp: '2026-04-01' }), // invalid
+      JSON.stringify({ sessionId: 's1', timestamp: '2026-04-01', message: { role: 'assistant' } }), // valid
+      JSON.stringify({ noSessionId: true, timestamp: '2026-04-01', message: {} }), // missing sessionId
+      JSON.stringify({ sessionId: 's2', timestamp: '2026-04-01' }), // missing message
     ]
     await writeFile(file, lines.join('\n'))
 
