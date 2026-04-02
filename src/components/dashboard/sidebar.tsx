@@ -31,7 +31,7 @@ export function Sidebar() {
         <p className="text-[11px] text-zinc-500 mt-0.5">Dashboard</p>
       </div>
 
-      <nav className="flex-1 px-3 space-y-0.5">
+      <nav className="flex-1 px-3 space-y-0.5" aria-label="Main navigation">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href
           return (

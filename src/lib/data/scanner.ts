@@ -12,6 +12,7 @@ import { parseHistory, parseAgentMessages, aggregateTokenUsage } from '@/lib/par
 import { parseVault } from '@/lib/parsers/markdown'
 import type {
   Project,
+  ProjectHealth,
   DashboardMetrics,
   SessionEntry,
   AgentMessage,
@@ -39,7 +40,7 @@ export async function discoverProjects(): Promise<Project[]> {
   const projects = await Promise.all(
     projectDirs.map(async (dir) => {
       const encodedPath = dir.name
-      const decodedPath = decodeProjectPath(encodedPath)
+      const decodedPath = await decodeProjectPath(encodedPath)
       const name = projectName(decodedPath)
 
       // Try to read state.json from the actual project directory
@@ -50,6 +51,27 @@ export async function discoverProjects(): Promise<Project[]> {
       const vaultPath = join(decodedPath, 'vault')
       const vaultEntries = projectExists ? await parseVault(vaultPath) : []
 
+      // Compute project health
+      const hasState = state !== null
+      const hasVault = vaultEntries.length > 0
+      const hasSteering = projectExists && await exists(join(decodedPath, 'steering', 'product.md'))
+      const hasTests = projectExists && (
+        await exists(join(decodedPath, 'vitest.config.ts')) ||
+        await exists(join(decodedPath, 'jest.config.ts')) ||
+        await exists(join(decodedPath, 'jest.config.js'))
+      )
+
+      const checks = [hasState, hasVault, hasSteering, hasTests]
+      const healthScore = Math.round((checks.filter(Boolean).length / checks.length) * 100)
+      const health: ProjectHealth = {
+        hasState,
+        hasVault,
+        hasSteering,
+        hasTests,
+        score: healthScore,
+        label: healthScore >= 75 ? 'healthy' : healthScore >= 50 ? 'partial' : 'minimal',
+      }
+
       return {
         name,
         path: decodedPath,
@@ -58,6 +80,7 @@ export async function discoverProjects(): Promise<Project[]> {
         recentSessions: [] as SessionEntry[],
         vaultEntries,
         features: state?.features ?? [],
+        health,
       }
     })
   )
@@ -100,8 +123,10 @@ export async function readTasks(): Promise<Task[]> {
         try {
           const { readFile } = await import('node:fs/promises')
           const raw = await readFile(join(teamPath, file), 'utf-8')
-          const task = JSON.parse(raw) as Task
-          tasks.push(task)
+          const data: unknown = JSON.parse(raw)
+          if (data && typeof data === 'object' && 'id' in data && 'status' in data) {
+            tasks.push(data as Task)
+          }
         } catch {
           // skip invalid files
         }

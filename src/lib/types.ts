@@ -89,6 +89,17 @@ export interface VaultEntry {
   path: string
 }
 
+// --- Project health ---
+
+export interface ProjectHealth {
+  hasState: boolean
+  hasVault: boolean
+  hasSteering: boolean
+  hasTests: boolean
+  score: number // 0-100
+  label: 'healthy' | 'partial' | 'minimal'
+}
+
 // --- Aggregated project data ---
 
 export interface Project {
@@ -99,6 +110,7 @@ export interface Project {
   recentSessions: SessionEntry[]
   vaultEntries: VaultEntry[]
   features: Feature[]
+  health: ProjectHealth
 }
 
 // --- Dashboard metrics ---

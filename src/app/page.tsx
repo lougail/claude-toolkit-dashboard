@@ -5,12 +5,19 @@ import {
   MessageSquare,
   Zap,
   Scale,
+  FileText,
+  AlertCircle,
+  CheckCircle,
+  Circle,
 } from 'lucide-react'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { TokenUsageChart } from '@/components/charts/token-usage-chart'
 import { PipelineChart } from '@/components/charts/pipeline-chart'
+import { EmptyState } from '@/components/dashboard/empty-state'
+import { RefreshIndicator } from '@/components/dashboard/refresh-indicator'
 import { getDashboardMetrics, discoverProjects } from '@/lib/data/scanner'
-import { formatRelativeTime } from '@/lib/utils'
+import { parseSteering } from '@/lib/parsers/steering'
+import { formatRelativeTime, cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +26,12 @@ export default async function OverviewPage() {
     getDashboardMetrics(),
     discoverProjects(),
   ])
+
+  // Load steering for the first project (or current project)
+  const firstProject = projects[0]
+  const steeringDocs = firstProject
+    ? await parseSteering(firstProject.path)
+    : []
 
   const pipelineData = [
     {
@@ -31,11 +44,14 @@ export default async function OverviewPage() {
 
   return (
     <>
-      <header className="mb-8">
-        <h1 className="text-lg font-semibold text-zinc-100">Overview</h1>
-        <p className="text-sm text-zinc-500 mt-1">
-          Claude Code Toolkit activity across all projects
-        </p>
+      <header className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-zinc-100">Overview</h1>
+          <p className="text-sm text-zinc-500 mt-1">
+            Claude Code Toolkit activity across all projects
+          </p>
+        </div>
+        <RefreshIndicator />
       </header>
 
       {/* Metrics grid */}
@@ -81,7 +97,10 @@ export default async function OverviewPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Token usage chart */}
-        <section className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4">
+        <section
+          className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4"
+          aria-label="Token usage over 30 days"
+        >
           <h2 className="text-sm font-medium text-zinc-300 mb-4">
             Token Usage (30 days)
           </h2>
@@ -89,7 +108,10 @@ export default async function OverviewPage() {
         </section>
 
         {/* Pipeline chart */}
-        <section className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4">
+        <section
+          className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4"
+          aria-label="Feature pipeline distribution"
+        >
           <h2 className="text-sm font-medium text-zinc-300 mb-4">
             Feature Pipeline
           </h2>
@@ -97,19 +119,63 @@ export default async function OverviewPage() {
         </section>
       </div>
 
+      {/* Steering docs summary */}
+      {steeringDocs.length > 0 && (
+        <section className="mt-6 rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4" aria-label="Steering documents">
+          <h2 className="text-sm font-medium text-zinc-300 mb-4">
+            <FileText className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
+            Steering Docs
+            {firstProject && (
+              <span className="text-zinc-600 font-normal ml-2">({firstProject.name})</span>
+            )}
+          </h2>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {steeringDocs.map((doc) => (
+              <div
+                key={doc.type}
+                className={cn(
+                  'rounded-md border px-3 py-2',
+                  doc.exists
+                    ? 'border-white/[0.04] bg-zinc-900/30'
+                    : 'border-dashed border-zinc-800 bg-transparent'
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  {doc.exists ? (
+                    <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                  ) : (
+                    <Circle className="h-3.5 w-3.5 text-zinc-700 shrink-0" />
+                  )}
+                  <span className="text-xs font-medium text-zinc-300">{doc.type}.md</span>
+                </div>
+                {doc.exists && (
+                  <p className="text-[11px] text-zinc-500 mt-1 truncate">{doc.title}</p>
+                )}
+                {!doc.exists && (
+                  <p className="text-[11px] text-zinc-600 mt-1">Not configured</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Recent activity */}
-      <section className="mt-6 rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4">
+      <section className="mt-6 rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4" aria-label="Recent sessions">
         <h2 className="text-sm font-medium text-zinc-300 mb-4">
           Recent Sessions
         </h2>
         {metrics.recentSessions.length === 0 ? (
-          <p className="text-sm text-zinc-500 py-8 text-center">
-            No sessions recorded yet
-          </p>
+          <EmptyState
+            icon={MessageSquare}
+            title="No sessions recorded"
+            description="Sessions appear after using Claude Code in any project. Check that ~/.claude/history.jsonl exists."
+            className="border-0 bg-transparent py-8"
+          />
         ) : (
           <div className="divide-y divide-white/[0.04]">
             {metrics.recentSessions.slice(0, 10).map((session) => {
-              const projectName =
+              const name =
                 session.project?.split('/').pop() ?? 'unknown'
               return (
                 <div
@@ -118,7 +184,7 @@ export default async function OverviewPage() {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="inline-flex items-center rounded bg-zinc-800 px-1.5 py-0.5 text-[11px] font-medium text-zinc-400 shrink-0">
-                      {projectName}
+                      {name}
                     </span>
                     <span className="text-sm text-zinc-300 truncate">
                       {session.display?.slice(0, 80) ?? 'No description'}
@@ -134,13 +200,16 @@ export default async function OverviewPage() {
         )}
       </section>
 
-      {/* Projects list */}
-      <section className="mt-6 rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4">
+      {/* Projects list with health */}
+      <section className="mt-6 rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4" aria-label="Projects list">
         <h2 className="text-sm font-medium text-zinc-300 mb-4">Projects</h2>
         {projects.length === 0 ? (
-          <p className="text-sm text-zinc-500 py-8 text-center">
-            No projects found in ~/.claude/projects/
-          </p>
+          <EmptyState
+            icon={AlertCircle}
+            title="No projects detected"
+            description="Projects appear when you use Claude Code in a directory. Check that ~/.claude/projects/ exists and contains project folders."
+            className="border-0 bg-transparent py-8"
+          />
         ) : (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {projects.map((project) => (
@@ -148,9 +217,23 @@ export default async function OverviewPage() {
                 key={project.encodedPath}
                 className="rounded-md border border-white/[0.04] bg-zinc-900/30 px-4 py-3"
               >
-                <p className="text-sm font-medium text-zinc-200">
-                  {project.name}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-zinc-200">
+                    {project.name}
+                  </p>
+                  <span
+                    className={cn(
+                      'inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium',
+                      project.health.label === 'healthy'
+                        ? 'bg-emerald-500/10 text-emerald-400'
+                        : project.health.label === 'partial'
+                          ? 'bg-amber-500/10 text-amber-400'
+                          : 'bg-zinc-500/10 text-zinc-500'
+                    )}
+                  >
+                    {project.health.score}%
+                  </span>
+                </div>
                 <p className="text-[11px] text-zinc-600 mt-0.5 font-mono truncate">
                   {project.path}
                 </p>
@@ -162,8 +245,27 @@ export default async function OverviewPage() {
                     {project.recentSessions.length} sessions
                   </span>
                   <span className="text-[11px] text-zinc-500">
-                    {project.vaultEntries.length} vault entries
+                    {project.vaultEntries.length} vault
                   </span>
+                </div>
+                {/* Health details */}
+                <div className="flex items-center gap-2 mt-2">
+                  {[
+                    { label: 'state', ok: project.health.hasState },
+                    { label: 'vault', ok: project.health.hasVault },
+                    { label: 'steering', ok: project.health.hasSteering },
+                    { label: 'tests', ok: project.health.hasTests },
+                  ].map(({ label, ok }) => (
+                    <span
+                      key={label}
+                      className={cn(
+                        'text-[10px]',
+                        ok ? 'text-emerald-600' : 'text-zinc-700'
+                      )}
+                    >
+                      {ok ? '●' : '○'} {label}
+                    </span>
+                  ))}
                 </div>
               </div>
             ))}

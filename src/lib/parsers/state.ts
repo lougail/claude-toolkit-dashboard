@@ -1,6 +1,22 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { ProjectState } from '@/lib/types'
+import type { ProjectState, Feature } from '@/lib/types'
+
+function isFeature(v: unknown): v is Feature {
+  if (!v || typeof v !== 'object') return false
+  const f = v as Record<string, unknown>
+  return typeof f.slug === 'string' && typeof f.status === 'string'
+}
+
+function isProjectState(v: unknown): v is ProjectState {
+  if (!v || typeof v !== 'object') return false
+  const d = v as Record<string, unknown>
+  if (typeof d.project !== 'string') return false
+  if (d.project.includes('{{')) return false // template placeholder
+  if (!Array.isArray(d.features)) return false
+  if (!d.decisions || typeof d.decisions !== 'object') return false
+  return true
+}
 
 /**
  * Read and parse a project's state.json
@@ -11,10 +27,12 @@ export async function parseState(projectPath: string): Promise<ProjectState | nu
 
   try {
     const raw = await readFile(statePath, 'utf-8')
-    const data = JSON.parse(raw) as ProjectState
+    const data: unknown = JSON.parse(raw)
 
-    // Skip template files (contain placeholders)
-    if (data.project?.includes('{{')) return null
+    if (!isProjectState(data)) return null
+
+    // Filter out malformed features
+    data.features = data.features.filter(isFeature)
 
     return data
   } catch {

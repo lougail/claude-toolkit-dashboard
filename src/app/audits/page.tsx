@@ -1,4 +1,6 @@
+import { ShieldCheck } from 'lucide-react'
 import { discoverProjects } from '@/lib/data/scanner'
+import { EmptyState } from '@/components/dashboard/empty-state'
 import { cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
@@ -28,13 +30,12 @@ export default async function AuditsPage() {
       </header>
 
       {audits.length === 0 ? (
-        <div className="rounded-lg border border-white/[0.06] bg-zinc-900/50 py-16 text-center">
-          <p className="text-sm text-zinc-500">No audit data available.</p>
-          <p className="text-xs text-zinc-600 mt-1">
-            Run <code className="text-zinc-400">/audit-prd</code> on a feature
-            to generate audit scores.
-          </p>
-        </div>
+        <EmptyState
+          icon={ShieldCheck}
+          title="No audit data"
+          description="Audit scores appear when features have been audited. Run an audit on a feature with an active PRD to see scores and blockers here."
+          action="/audit-prd to audit a feature"
+        />
       ) : (
         <div className="space-y-3">
           {audits.map((audit) => (

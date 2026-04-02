@@ -1,4 +1,6 @@
+import { GitBranch } from 'lucide-react'
 import { discoverProjects } from '@/lib/data/scanner'
+import { EmptyState } from '@/components/dashboard/empty-state'
 import type { Feature } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -110,14 +112,12 @@ export default async function PipelinePage() {
       </header>
 
       {!hasFeatures ? (
-        <div className="rounded-lg border border-white/[0.06] bg-zinc-900/50 py-16 text-center">
-          <p className="text-sm text-zinc-500">
-            No features tracked yet.
-          </p>
-          <p className="text-xs text-zinc-600 mt-1">
-            Features appear when projects have a .claude/state.json with tracked features.
-          </p>
-        </div>
+        <EmptyState
+          icon={GitBranch}
+          title="No features tracked"
+          description="Features appear when projects have a .claude/state.json with tracked features. Create a PRD and start implementation to see features here."
+          action="/prd to create a feature spec"
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {(Object.entries(featuresByStatus) as [keyof typeof STATUS_CONFIG, typeof featuresByStatus.planning][]).map(

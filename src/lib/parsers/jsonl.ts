@@ -1,18 +1,36 @@
 import { readFile } from 'node:fs/promises'
 import type { SessionEntry, AgentMessage } from '@/lib/types'
 
+function isSessionEntry(v: unknown): v is SessionEntry {
+  if (!v || typeof v !== 'object') return false
+  const e = v as Record<string, unknown>
+  return typeof e.timestamp === 'number' && typeof e.sessionId === 'string'
+}
+
+function isAgentMessage(v: unknown): v is AgentMessage {
+  if (!v || typeof v !== 'object') return false
+  const m = v as Record<string, unknown>
+  return typeof m.sessionId === 'string' && typeof m.timestamp === 'string'
+}
+
 /**
  * Parse a JSONL file line by line
- * Skips invalid lines gracefully
+ * Uses a validator to skip malformed entries instead of blind `as T`
  */
-async function parseJsonl<T>(filePath: string): Promise<T[]> {
+async function parseJsonl<T>(
+  filePath: string,
+  validate: (v: unknown) => v is T
+): Promise<T[]> {
   try {
     const raw = await readFile(filePath, 'utf-8')
     const lines = raw.trim().split('\n').filter(Boolean)
 
     return lines.reduce<T[]>((acc, line) => {
       try {
-        acc.push(JSON.parse(line) as T)
+        const parsed: unknown = JSON.parse(line)
+        if (validate(parsed)) {
+          acc.push(parsed)
+        }
       } catch {
         // skip malformed lines
       }
@@ -28,7 +46,7 @@ async function parseJsonl<T>(filePath: string): Promise<T[]> {
  * Returns session entries sorted by most recent first
  */
 export async function parseHistory(historyPath: string): Promise<SessionEntry[]> {
-  const entries = await parseJsonl<SessionEntry>(historyPath)
+  const entries = await parseJsonl(historyPath, isSessionEntry)
   return entries.sort((a, b) => b.timestamp - a.timestamp)
 }
 
@@ -36,7 +54,7 @@ export async function parseHistory(historyPath: string): Promise<SessionEntry[]>
  * Parse a subagent JSONL file for token usage and activity data
  */
 export async function parseAgentMessages(filePath: string): Promise<AgentMessage[]> {
-  return parseJsonl<AgentMessage>(filePath)
+  return parseJsonl(filePath, isAgentMessage)
 }
 
 /**
