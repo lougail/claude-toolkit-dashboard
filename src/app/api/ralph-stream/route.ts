@@ -57,6 +57,7 @@ export async function GET(): Promise<Response> {
 
   const encoder = new TextEncoder()
   let watcherClosed = false
+  let cancelled = false
   let cleanupRef: (() => void) | null = null
   let previousSessions: RalphSession[] = []
 
@@ -68,6 +69,12 @@ export async function GET(): Promise<Response> {
       controller.enqueue(
         encoder.encode(`data: ${JSON.stringify(sessions)}\n\n`)
       )
+
+      // If client disconnected during the await above, bail out
+      if (cancelled) {
+        controller.close()
+        return
+      }
 
       if (watchPaths.length === 0) {
         controller.close()
@@ -133,6 +140,7 @@ export async function GET(): Promise<Response> {
       cleanupRef = cleanup
     },
     cancel() {
+      cancelled = true
       cleanupRef?.()
     },
   })
