@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { parseState } from '@/lib/parsers/state'
 import { parseHistory, parseAgentMessages, aggregateTokenUsage } from '@/lib/parsers/jsonl'
 import { parseVault } from '@/lib/parsers/markdown'
+import { parseRalphSession } from '@/lib/parsers/ralph'
 
 const TEST_DIR = join(tmpdir(), 'dashboard-test-' + Date.now())
 
@@ -345,5 +346,60 @@ We decided to use JWT because...`
     expect(entries).toHaveLength(1)
     expect(entries[0]!.title).toBe('note')
     expect(entries[0]!.type).toBe('journal')
+  })
+})
+
+// --- ralph.ts ---
+
+describe('parseRalphSession', () => {
+  it('should return null when .ralph/ does not exist', async () => {
+    const result = await parseRalphSession(join(TEST_DIR, 'no-ralph'), 'test')
+    expect(result).toBeNull()
+  })
+
+  it('should parse status.json and count fix_plan.md checkboxes', async () => {
+    const projectDir = join(TEST_DIR, 'ralph-project')
+    const ralphDir = join(projectDir, '.ralph')
+    await mkdir(ralphDir, { recursive: true })
+
+    await writeFile(
+      join(ralphDir, 'status.json'),
+      JSON.stringify({
+        status: 'running',
+        loop_count: 3,
+        last_action: 'executing',
+        timestamp: '2026-04-03T12:00:00Z',
+      })
+    )
+    await writeFile(
+      join(ralphDir, 'fix_plan.md'),
+      '# Plan\n- [x] Done task\n- [x] Another done\n- [ ] Pending task\n- [ ] Also pending\n'
+    )
+    await writeFile(join(ralphDir, 'live.log'), 'line 1\nline 2\nline 3\n')
+
+    const result = await parseRalphSession(projectDir, 'ralph-project')
+    expect(result).not.toBeNull()
+    expect(result!.status).toBe('running')
+    expect(result!.loopCount).toBe(3)
+    expect(result!.tasksDone).toBe(2)
+    expect(result!.tasksTotal).toBe(4)
+    expect(result!.liveLog).toHaveLength(3)
+  })
+
+  it('should normalize legacy status values', async () => {
+    const projectDir = join(TEST_DIR, 'ralph-completed')
+    const ralphDir = join(projectDir, '.ralph')
+    await mkdir(ralphDir, { recursive: true })
+
+    await writeFile(
+      join(ralphDir, 'status.json'),
+      JSON.stringify({ status: 'completed' })
+    )
+
+    const result = await parseRalphSession(projectDir, 'done-project')
+    expect(result).not.toBeNull()
+    expect(result!.status).toBe('completed')
+    expect(result!.tasksDone).toBe(0)
+    expect(result!.tasksTotal).toBe(0)
   })
 })

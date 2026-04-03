@@ -16,15 +16,20 @@ import { TokenUsageChart } from '@/components/charts/token-usage-chart'
 import { PipelineChart } from '@/components/charts/pipeline-chart'
 import { EmptyState } from '@/components/dashboard/empty-state'
 import { RefreshIndicator } from '@/components/dashboard/refresh-indicator'
+import { RalphTracker } from '@/components/dashboard/ralph-tracker'
 import { getDashboardMetrics, discoverProjects } from '@/lib/data/scanner'
 import { parseSteering } from '@/lib/parsers/steering'
+import { discoverRalphSessions } from '@/lib/parsers/ralph'
 import { formatRelativeTime, cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
 export default async function OverviewPage() {
   const projects = await discoverProjects()
-  const metrics = await getDashboardMetrics(projects)
+  const [metrics, ralphSessions] = await Promise.all([
+    getDashboardMetrics(projects),
+    discoverRalphSessions(projects),
+  ])
 
   // Load steering for the first project (or current project)
   const firstProject = projects[0]
@@ -124,6 +129,13 @@ export default async function OverviewPage() {
           <PipelineChart data={pipelineData} />
         </section>
       </div>
+
+      {/* Ralph sessions */}
+      {ralphSessions.length > 0 && (
+        <div className="mt-6">
+          <RalphTracker initialSessions={ralphSessions} />
+        </div>
+      )}
 
       {/* Steering docs summary */}
       {steeringDocs.length > 0 && (

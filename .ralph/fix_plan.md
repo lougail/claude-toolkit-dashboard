@@ -40,11 +40,12 @@
 
 ## Medium Priority
 
-- [ ] **US-004: Ralph real-time tracking**
-  - SSE API route with chokidar filesystem watcher
-  - Ralph progress component (tasks done/total from fix_plan.md)
-  - Active session detection from .ralph/*/status.json
-  - Last actions log display
+- [x] **US-004: Ralph real-time tracking** (Loop 4)
+  - [x] Ralph parser: reads status.json + counts fix_plan.md checkboxes
+  - [x] SSE API route (/api/ralph-stream) with chokidar filesystem watcher
+  - [x] RalphTracker client component with live updates via EventSource
+  - [x] Integrated into Overview page (shows active sessions with progress bars)
+  - [x] Live log display for running sessions
 
 - [ ] **US-006: Multi-project configuration**
   - config.json schema and reader
@@ -65,6 +66,7 @@
 - [x] US-002: 6-column kanban pipeline (Loop 1)
 - [x] US-001: Git branch + dirty count in project cards (Loop 2)
 - [x] US-003: Cost estimation + period selector on Activity page (Loop 3)
+- [x] US-004: Ralph real-time tracking with SSE (Loop 4)
 
 ## Notes
 

@@ -127,6 +127,20 @@ export interface Project {
   git: GitInfo
 }
 
+// --- Ralph session tracking ---
+
+export interface RalphSession {
+  projectName: string
+  projectPath: string
+  status: 'running' | 'completed' | 'blocked' | 'unknown'
+  loopCount: number
+  tasksDone: number
+  tasksTotal: number
+  lastAction: string | null
+  timestamp: string | null
+  liveLog: string[]
+}
+
 // --- Dashboard metrics ---
 
 export interface DashboardMetrics {
