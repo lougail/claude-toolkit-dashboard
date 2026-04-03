@@ -273,9 +273,9 @@ export default async function ProjectDetailPage({
           </p>
         ) : (
           <div className="divide-y divide-white/[0.04]">
-            {project.recentSessions.slice(0, 15).map((session) => (
+            {project.recentSessions.slice(0, 15).map((session, i) => (
               <div
-                key={session.sessionId}
+                key={`${session.sessionId}-${i}`}
                 className="flex items-center justify-between py-2.5"
               >
                 <span className="text-sm text-zinc-300 truncate mr-4">
