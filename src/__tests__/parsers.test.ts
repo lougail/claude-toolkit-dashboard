@@ -123,6 +123,34 @@ describe('parseState', () => {
     expect(state!.features).toHaveLength(1)
     expect(state!.features[0]!.slug).toBe('valid')
   })
+
+  it('normalizes legacy statuses to v2 phases', async () => {
+    const projectDir = join(TEST_DIR, 'project-legacy-statuses')
+    await mkdir(join(projectDir, '.claude'), { recursive: true })
+    await writeFile(
+      join(projectDir, '.claude', 'state.json'),
+      JSON.stringify({
+        project: 'legacy',
+        updatedAt: '2026-04-01',
+        features: [
+          { slug: 'feat-planning', status: 'planning' },
+          { slug: 'feat-inprogress', status: 'in-progress' },
+          { slug: 'feat-shipped', status: 'shipped' },
+          { slug: 'feat-building', status: 'building' },
+        ],
+        decisions: { pending: 0, validated: 0, rejected: 0 },
+        lastSession: { date: null, branch: null, lastAction: null, nextStep: null },
+      })
+    )
+
+    const state = await parseState(projectDir)
+    expect(state).not.toBeNull()
+    expect(state!.features).toHaveLength(4)
+    expect(state!.features[0]!.status).toBe('prd')
+    expect(state!.features[1]!.status).toBe('building')
+    expect(state!.features[2]!.status).toBe('done')
+    expect(state!.features[3]!.status).toBe('building')
+  })
 })
 
 // --- jsonl.ts ---

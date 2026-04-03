@@ -241,9 +241,9 @@ export async function getDashboardMetrics(
   return {
     totalProjects: projects.length,
     totalFeatures: allFeatures.length,
-    activeFeatures: allFeatures.filter((f) => f.status === 'in-progress')
+    activeFeatures: allFeatures.filter((f) => f.status === 'building' || f.status === 'review')
       .length,
-    shippedFeatures: allFeatures.filter((f) => f.shipped).length,
+    shippedFeatures: allFeatures.filter((f) => f.status === 'done' || f.status === 'ship').length,
     pendingDecisions: projects.reduce(
       (sum, p) => sum + (p.state?.decisions.pending ?? 0),
       0

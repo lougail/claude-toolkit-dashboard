@@ -16,9 +16,12 @@ interface PipelineChartProps {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  planning: '#f59e0b',
-  'in-progress': '#3b82f6',
-  shipped: '#10b981',
+  idea: '#71717a',
+  prd: '#f59e0b',
+  building: '#3b82f6',
+  review: '#a855f7',
+  ship: '#f97316',
+  done: '#10b981',
 }
 
 export function PipelineChart({ data }: PipelineChartProps) {

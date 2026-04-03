@@ -17,9 +17,15 @@ export interface ProjectState {
   }
 }
 
+/** All 6 phases of the feature workflow */
+export type FeatureStatus = 'idea' | 'prd' | 'building' | 'review' | 'ship' | 'done'
+
+/** Legacy statuses from v1 state.json files */
+export type LegacyFeatureStatus = 'planning' | 'in-progress' | 'shipped'
+
 export interface Feature {
   slug: string
-  status: 'planning' | 'in-progress' | 'shipped'
+  status: FeatureStatus
   prd: string | null
   ralph: {
     active: boolean
