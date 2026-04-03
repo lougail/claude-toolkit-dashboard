@@ -46,3 +46,17 @@ target/
 # Ralph backup directories (created by migration)
 .ralph_backup_*
 .claude/worktrees/
+.claude/events.jsonl
+
+# Next.js build
+.next/
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# Ralph runtime
+.ralph/.loop_start_sha
+.ralph/AGENT.md
+.ralph/PROMPT.md
+.ralph/progress.json
+.ralph/live.log
+.ralphrc
