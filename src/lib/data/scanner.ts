@@ -1,4 +1,5 @@
 import { readdir, stat, access } from 'node:fs/promises'
+import { execFile } from 'node:child_process'
 import { join } from 'node:path'
 import {
   PROJECTS_DIR,
@@ -13,6 +14,7 @@ import { parseVault } from '@/lib/parsers/markdown'
 import type {
   Project,
   ProjectHealth,
+  GitInfo,
   DashboardMetrics,
   SessionEntry,
   AgentMessage,
@@ -38,6 +40,26 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
+function execGit(args: string[], cwd: string): Promise<string> {
+  return new Promise((resolve) => {
+    execFile('git', args, { cwd, timeout: 3000 }, (err, stdout) => {
+      resolve(err ? '' : stdout.trim())
+    })
+  })
+}
+
+async function getGitInfo(projectPath: string): Promise<GitInfo> {
+  const [branch, statusOutput] = await Promise.all([
+    execGit(['rev-parse', '--abbrev-ref', 'HEAD'], projectPath),
+    execGit(['status', '--porcelain', '--untracked-files=no'], projectPath),
+  ])
+
+  return {
+    branch: branch || null,
+    dirtyCount: statusOutput ? statusOutput.split('\n').length : 0,
+  }
+}
+
 /**
  * Discover all projects registered in ~/.claude/projects/
  */
@@ -59,11 +81,11 @@ export async function discoverProjects(): Promise<Project[]> {
 
       // Try to read state.json from the actual project directory
       const projectExists = await exists(decodedPath)
-      const state = projectExists ? await parseState(decodedPath) : null
-
-      // Read vault entries from the project
-      const vaultPath = join(decodedPath, 'vault')
-      const vaultEntries = projectExists ? await parseVault(vaultPath) : []
+      const [state, vaultEntries, git] = await Promise.all([
+        projectExists ? parseState(decodedPath) : Promise.resolve(null),
+        projectExists ? parseVault(join(decodedPath, 'vault')) : Promise.resolve([]),
+        projectExists ? getGitInfo(decodedPath) : Promise.resolve({ branch: null, dirtyCount: 0 }),
+      ])
 
       // Compute project health
       const hasState = state !== null
@@ -95,6 +117,7 @@ export async function discoverProjects(): Promise<Project[]> {
         vaultEntries,
         features: state?.features ?? [],
         health,
+        git,
       }
     })
   )

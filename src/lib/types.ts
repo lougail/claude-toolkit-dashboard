@@ -106,6 +106,13 @@ export interface ProjectHealth {
   label: 'healthy' | 'partial' | 'minimal'
 }
 
+// --- Git info (live from filesystem) ---
+
+export interface GitInfo {
+  branch: string | null
+  dirtyCount: number
+}
+
 // --- Aggregated project data ---
 
 export interface Project {
@@ -117,6 +124,7 @@ export interface Project {
   vaultEntries: VaultEntry[]
   features: Feature[]
   health: ProjectHealth
+  git: GitInfo
 }
 
 // --- Dashboard metrics ---

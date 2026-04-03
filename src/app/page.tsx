@@ -9,6 +9,7 @@ import {
   AlertCircle,
   CheckCircle,
   Circle,
+  FileDiff,
 } from 'lucide-react'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { TokenUsageChart } from '@/components/charts/token-usage-chart'
@@ -246,7 +247,22 @@ export default async function OverviewPage() {
                     {project.health.score}%
                   </span>
                 </div>
-                <p className="text-[11px] text-zinc-500 mt-0.5 font-mono truncate">
+                {/* Git branch + dirty indicator */}
+                <div className="flex items-center gap-2 mt-1.5">
+                  {project.git.branch && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-zinc-400 font-mono">
+                      <GitBranch className="size-3 shrink-0" aria-hidden="true" />
+                      {project.git.branch}
+                    </span>
+                  )}
+                  {project.git.dirtyCount > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-amber-400">
+                      <FileDiff className="size-3 shrink-0" aria-hidden="true" />
+                      {project.git.dirtyCount} dirty
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-zinc-600 mt-0.5 font-mono truncate">
                   {project.path}
                 </p>
                 <div className="flex items-center gap-3 mt-2">

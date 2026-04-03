@@ -19,17 +19,17 @@
 
 ## High Priority
 
-- [ ] **US-002: Upgrade Pipeline to 6-column kanban**
-  - Extend Feature.status type: idea | prd | building | review | ship | done
-  - Map legacy 3 statuses → 6 (planning→prd, in-progress→building, shipped→done)
-  - 6-column responsive layout with horizontal scroll on mobile
-  - Feature cards: add time-in-column, detail click
+- [x] **US-002: Upgrade Pipeline to 6-column kanban** (Loop 1)
+  - Extended Feature.status to 6 phases with legacy mapping
+  - 6-column responsive layout with icons and horizontal scroll
 
-- [ ] **US-001: Enhance Mission Control**
-  - Add git info per project: current branch, dirty file count
-  - Add CI status indicator (read from state.json or .github)
-  - Add PR count per project
-  - Improve health score with more granular checks
+- [~] **US-001: Enhance Mission Control** (Loop 2 — partial)
+  - [x] Added GitInfo type (branch + dirtyCount) to Project
+  - [x] getGitInfo() via execFile('git') with 3s timeout
+  - [x] Project cards show branch name + dirty file count
+  - [ ] CI status indicator (read from state.json or .github)
+  - [ ] PR count per project
+  - [ ] Improve health score with more granular checks
 
 - [ ] **US-003: Cost estimation & period selector**
   - Calculate estimated cost from token usage (Anthropic pricing)
@@ -61,6 +61,8 @@
 
 - [x] Project enabled for Ralph
 - [x] Review codebase and understand architecture (Loop 1)
+- [x] US-002: 6-column kanban pipeline (Loop 1)
+- [x] US-001: Git branch + dirty count in project cards (Loop 2)
 
 ## Notes
 
