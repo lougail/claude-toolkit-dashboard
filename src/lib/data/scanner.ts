@@ -1,4 +1,4 @@
-import { readdir, stat, access } from 'node:fs/promises'
+import { readdir, stat } from 'node:fs/promises'
 import { execFile } from 'node:child_process'
 import { join } from 'node:path'
 import {
@@ -22,6 +22,7 @@ import type {
   AgentMessage,
   Task,
 } from '@/lib/types'
+import { exists } from '@/lib/fs'
 
 function isTask(v: unknown): v is Task {
   if (!v || typeof v !== 'object') return false
@@ -31,15 +32,6 @@ function isTask(v: unknown): v is Task {
     typeof t.subject === 'string' &&
     typeof t.status === 'string'
   )
-}
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await access(path)
-    return true
-  } catch {
-    return false
-  }
 }
 
 function execGit(args: string[], cwd: string): Promise<string> {

@@ -3,13 +3,8 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { X, GitBranch, FileText, Shield, Bot } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { FEATURE_STATUS_CONFIG } from '@/lib/constants'
 import type { Feature } from '@/lib/types'
-
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  planning: { label: 'Planning', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-  'in-progress': { label: 'In Progress', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-  shipped: { label: 'Shipped', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-}
 
 interface FeatureModalProps {
   feature: Feature | null
@@ -57,7 +52,7 @@ export function FeatureModal({ feature, projectName, onClose }: FeatureModalProp
     }
   }
 
-  const statusConfig = feature ? STATUS_CONFIG[feature.status] : null
+  const statusConfig = feature ? FEATURE_STATUS_CONFIG[feature.status] : null
   const progress =
     feature && feature.ralph.storiesTotal > 0
       ? Math.round((feature.ralph.storiesDone / feature.ralph.storiesTotal) * 100)

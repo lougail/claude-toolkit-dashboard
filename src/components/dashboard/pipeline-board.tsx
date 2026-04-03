@@ -2,16 +2,9 @@
 
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { FEATURE_STATUS_CONFIG, FEATURE_STATUSES } from '@/lib/constants'
 import { FeatureModal } from '@/components/dashboard/feature-modal'
-import type { Feature } from '@/lib/types'
-
-const STATUS_CONFIG = {
-  planning: { label: 'Planning', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-  'in-progress': { label: 'In Progress', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-  shipped: { label: 'Shipped', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-} as const
-
-type PipelineStatus = keyof typeof STATUS_CONFIG
+import type { Feature, FeatureStatus } from '@/lib/types'
 
 interface PipelineBoardProps {
   features: { feature: Feature; projectName: string }[]
@@ -110,16 +103,13 @@ export function PipelineBoard({ features, projectNames }: PipelineBoardProps) {
     ? features.filter(({ projectName }) => projectName === activeProject)
     : features
 
-  const featuresByStatus: Record<PipelineStatus, { feature: Feature; projectName: string }[]> = {
-    planning: [],
-    'in-progress': [],
-    shipped: [],
+  const featuresByStatus: Record<FeatureStatus, { feature: Feature; projectName: string }[]> = {
+    idea: [], prd: [], building: [], review: [], ship: [], done: [],
   }
 
   for (const item of filtered) {
-    const status = item.feature.status as PipelineStatus
-    if (featuresByStatus[status]) {
-      featuresByStatus[status].push(item)
+    if (featuresByStatus[item.feature.status]) {
+      featuresByStatus[item.feature.status].push(item)
     }
   }
 
@@ -165,10 +155,11 @@ export function PipelineBoard({ features, projectNames }: PipelineBoardProps) {
       )}
 
       {/* Kanban grid */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3" aria-label="Feature pipeline board">
-        {(Object.entries(featuresByStatus) as [PipelineStatus, typeof featuresByStatus.planning][]).map(
-          ([status, items]) => {
-            const config = STATUS_CONFIG[status]
+      <div className="overflow-x-auto -mx-4 px-4 pb-4">
+        <div className="grid grid-cols-6 gap-3 min-w-[900px]" aria-label="Feature pipeline board">
+        {FEATURE_STATUSES.map((status) => {
+            const items = featuresByStatus[status]
+            const config = FEATURE_STATUS_CONFIG[status]
             return (
               <div key={status}>
                 <div className="flex items-center gap-2 mb-3">
@@ -198,6 +189,7 @@ export function PipelineBoard({ features, projectNames }: PipelineBoardProps) {
             )
           }
         )}
+        </div>
       </div>
 
       {/* Feature detail modal */}

@@ -37,14 +37,16 @@ export default async function OverviewPage() {
     (p) => p.recentSessions.length > 0 || p.health.score > 0
   )
 
-  const pipelineData = [
-    {
-      status: 'planning',
-      count: metrics.totalFeatures - metrics.activeFeatures - metrics.shippedFeatures,
-    },
-    { status: 'in-progress', count: metrics.activeFeatures },
-    { status: 'shipped', count: metrics.shippedFeatures },
-  ].filter((d) => d.count > 0)
+  // Count features per v2 status across all projects
+  const statusCounts: Record<string, number> = {}
+  for (const project of projects) {
+    for (const feature of project.features) {
+      statusCounts[feature.status] = (statusCounts[feature.status] ?? 0) + 1
+    }
+  }
+  const pipelineData = ['idea', 'prd', 'building', 'review', 'ship', 'done']
+    .map((status) => ({ status, count: statusCounts[status] ?? 0 }))
+    .filter((d) => d.count > 0)
 
   return (
     <>

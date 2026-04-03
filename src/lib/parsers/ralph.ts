@@ -1,15 +1,7 @@
-import { readFile, access } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { RalphSession } from '@/lib/types'
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await access(path)
-    return true
-  } catch {
-    return false
-  }
-}
+import { exists } from '@/lib/fs'
 
 interface RalphStatusJson {
   status?: string

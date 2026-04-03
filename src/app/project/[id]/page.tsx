@@ -17,17 +17,11 @@ import { notFound } from 'next/navigation'
 import { discoverProjects } from '@/lib/data/scanner'
 import { parseSteering } from '@/lib/parsers/steering'
 import { cn, formatRelativeTime } from '@/lib/utils'
+import { FEATURE_STATUS_CONFIG } from '@/lib/constants'
 
 export const dynamic = 'force-dynamic'
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  idea: { label: 'Idea', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' },
-  prd: { label: 'PRD', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-  building: { label: 'Building', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-  review: { label: 'Review', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
-  ship: { label: 'Ship', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
-  done: { label: 'Done', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-} as const
+const DEFAULT_STATUS = { label: 'Unknown', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' }
 
 const VAULT_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
   idea: { label: 'Idea', color: 'bg-purple-500/20 text-purple-400' },
@@ -154,7 +148,7 @@ export default async function ProjectDetailPage({
         ) : (
           <div className="divide-y divide-white/[0.04]">
             {project.features.map((feature) => {
-              const statusConf = STATUS_CONFIG[feature.status] ?? { label: feature.status, color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' }
+              const statusConf = FEATURE_STATUS_CONFIG[feature.status] ?? DEFAULT_STATUS
               const progress =
                 feature.ralph.storiesTotal > 0
                   ? Math.round(

@@ -1,6 +1,7 @@
-import { readFile, access } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import matter from 'gray-matter'
+import { exists } from '@/lib/fs'
 
 export interface SteeringDoc {
   type: 'product' | 'tech' | 'structure'
@@ -18,15 +19,6 @@ const TYPE_MAP: Record<string, SteeringDoc['type']> = {
   'structure.md': 'structure',
 }
 
-async function fileExists(path: string): Promise<boolean> {
-  try {
-    await access(path)
-    return true
-  } catch {
-    return false
-  }
-}
-
 export async function parseSteering(projectPath: string): Promise<SteeringDoc[]> {
   const steeringDir = join(projectPath, 'steering')
   const docs: SteeringDoc[] = []
@@ -34,9 +26,9 @@ export async function parseSteering(projectPath: string): Promise<SteeringDoc[]>
   for (const file of STEERING_FILES) {
     const filePath = join(steeringDir, file)
     const type = TYPE_MAP[file]!
-    const exists = await fileExists(filePath)
+    const fileFound = await exists(filePath)
 
-    if (!exists) {
+    if (!fileFound) {
       docs.push({ type, exists: false, title: file, content: '', metadata: {} })
       continue
     }

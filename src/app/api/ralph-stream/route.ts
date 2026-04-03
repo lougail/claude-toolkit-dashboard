@@ -57,6 +57,7 @@ export async function GET(): Promise<Response> {
 
   const encoder = new TextEncoder()
   let watcherClosed = false
+  let cleanupRef: (() => void) | null = null
   let previousSessions: RalphSession[] = []
 
   const stream = new ReadableStream({
@@ -128,15 +129,11 @@ export async function GET(): Promise<Response> {
         watcher.close()
       }
 
-      // AbortSignal isn't directly available here, so we rely on
-      // the stream's cancel callback
-      stream.cancel = () => {
-        cleanup()
-        return Promise.resolve()
-      }
+      // Cleanup is handled by the cancel callback below
+      cleanupRef = cleanup
     },
     cancel() {
-      watcherClosed = true
+      cleanupRef?.()
     },
   })
 
