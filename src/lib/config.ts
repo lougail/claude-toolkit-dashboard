@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import { homedir } from 'node:os'
-import { stat } from 'node:fs/promises'
+import { stat, readFile, writeFile, mkdir } from 'node:fs/promises'
+import type { DashboardConfig } from '@/lib/types'
 
 const home = homedir()
 
@@ -8,6 +9,55 @@ export const CLAUDE_HOME = join(home, '.claude')
 export const PROJECTS_DIR = join(CLAUDE_HOME, 'projects')
 export const HISTORY_FILE = join(CLAUDE_HOME, 'history.jsonl')
 export const TASKS_DIR = join(CLAUDE_HOME, 'tasks')
+
+const CONFIG_DIR = join(CLAUDE_HOME, 'dashboard')
+const CONFIG_FILE = join(CONFIG_DIR, 'config.json')
+
+const DEFAULT_CONFIG: DashboardConfig = {
+  projectDirs: [join(home, 'Developer')],
+  excludePatterns: ['node_modules', '.git', 'dist', 'build', '.next'],
+  scanClaudeProjects: true,
+}
+
+/**
+ * Read dashboard config from ~/.claude/dashboard/config.json
+ * Returns default config if file doesn't exist
+ */
+export async function readDashboardConfig(): Promise<DashboardConfig> {
+  try {
+    const raw = await readFile(CONFIG_FILE, 'utf-8')
+    const parsed: unknown = JSON.parse(raw)
+    return validateConfig(parsed)
+  } catch {
+    return { ...DEFAULT_CONFIG }
+  }
+}
+
+/**
+ * Write dashboard config to ~/.claude/dashboard/config.json
+ */
+export async function writeDashboardConfig(config: DashboardConfig): Promise<void> {
+  const validated = validateConfig(config)
+  await mkdir(CONFIG_DIR, { recursive: true })
+  await writeFile(CONFIG_FILE, JSON.stringify(validated, null, 2), 'utf-8')
+}
+
+function validateConfig(raw: unknown): DashboardConfig {
+  if (!raw || typeof raw !== 'object') return { ...DEFAULT_CONFIG }
+  const obj = raw as Record<string, unknown>
+
+  return {
+    projectDirs: Array.isArray(obj.projectDirs)
+      ? obj.projectDirs.filter((d): d is string => typeof d === 'string' && d.startsWith('/'))
+      : DEFAULT_CONFIG.projectDirs,
+    excludePatterns: Array.isArray(obj.excludePatterns)
+      ? obj.excludePatterns.filter((p): p is string => typeof p === 'string')
+      : DEFAULT_CONFIG.excludePatterns,
+    scanClaudeProjects: typeof obj.scanClaudeProjects === 'boolean'
+      ? obj.scanClaudeProjects
+      : DEFAULT_CONFIG.scanClaudeProjects,
+  }
+}
 
 async function isDirectory(path: string): Promise<boolean> {
   try {

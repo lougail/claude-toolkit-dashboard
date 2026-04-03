@@ -7,6 +7,7 @@ import {
   TASKS_DIR,
   decodeProjectPath,
   projectName,
+  readDashboardConfig,
 } from '@/lib/config'
 import { parseState } from '@/lib/parsers/state'
 import { parseHistory, parseAgentMessages, aggregateTokenUsage } from '@/lib/parsers/jsonl'
@@ -61,68 +62,131 @@ async function getGitInfo(projectPath: string): Promise<GitInfo> {
 }
 
 /**
- * Discover all projects registered in ~/.claude/projects/
+ * Build a Project object from a decoded filesystem path
  */
-export async function discoverProjects(): Promise<Project[]> {
-  if (!(await exists(PROJECTS_DIR))) return []
+async function buildProject(decodedPath: string, encodedPath: string): Promise<Project | null> {
+  const name = projectName(decodedPath)
+  const projectExists = await exists(decodedPath)
 
-  const entries = await readdir(PROJECTS_DIR, { withFileTypes: true })
-  const projectDirs = entries.filter((e) => e.isDirectory())
+  const [state, vaultEntries, git] = await Promise.all([
+    projectExists ? parseState(decodedPath) : Promise.resolve(null),
+    projectExists ? parseVault(join(decodedPath, 'vault')) : Promise.resolve([]),
+    projectExists ? getGitInfo(decodedPath) : Promise.resolve({ branch: null, dirtyCount: 0 }),
+  ])
 
-  const projectResults = await Promise.all(
-    projectDirs.map(async (dir) => {
-      const encodedPath = dir.name
-      const decodedPath = await decodeProjectPath(encodedPath)
-
-      // Skip entries that failed to decode (invalid encoding)
-      if (!decodedPath) return null
-
-      const name = projectName(decodedPath)
-
-      // Try to read state.json from the actual project directory
-      const projectExists = await exists(decodedPath)
-      const [state, vaultEntries, git] = await Promise.all([
-        projectExists ? parseState(decodedPath) : Promise.resolve(null),
-        projectExists ? parseVault(join(decodedPath, 'vault')) : Promise.resolve([]),
-        projectExists ? getGitInfo(decodedPath) : Promise.resolve({ branch: null, dirtyCount: 0 }),
-      ])
-
-      // Compute project health
-      const hasState = state !== null
-      const hasVault = vaultEntries.length > 0
-      const hasSteering = projectExists && await exists(join(decodedPath, 'steering', 'product.md'))
-      const hasTests = projectExists && (
-        await exists(join(decodedPath, 'vitest.config.ts')) ||
-        await exists(join(decodedPath, 'jest.config.ts')) ||
-        await exists(join(decodedPath, 'jest.config.js'))
-      )
-
-      const checks = [hasState, hasVault, hasSteering, hasTests]
-      const healthScore = Math.round((checks.filter(Boolean).length / checks.length) * 100)
-      const health: ProjectHealth = {
-        hasState,
-        hasVault,
-        hasSteering,
-        hasTests,
-        score: healthScore,
-        label: healthScore >= 75 ? 'healthy' : healthScore >= 50 ? 'partial' : 'minimal',
-      }
-
-      return {
-        name,
-        path: decodedPath,
-        encodedPath,
-        state,
-        recentSessions: [] as SessionEntry[],
-        vaultEntries,
-        features: state?.features ?? [],
-        health,
-        git,
-      }
-    })
+  const hasState = state !== null
+  const hasVault = vaultEntries.length > 0
+  const hasSteering = projectExists && await exists(join(decodedPath, 'steering', 'product.md'))
+  const hasTests = projectExists && (
+    await exists(join(decodedPath, 'vitest.config.ts')) ||
+    await exists(join(decodedPath, 'jest.config.ts')) ||
+    await exists(join(decodedPath, 'jest.config.js'))
   )
 
-  const projects = projectResults.filter((p): p is NonNullable<typeof p> => p !== null)
+  const checks = [hasState, hasVault, hasSteering, hasTests]
+  const healthScore = Math.round((checks.filter(Boolean).length / checks.length) * 100)
+  const health: ProjectHealth = {
+    hasState,
+    hasVault,
+    hasSteering,
+    hasTests,
+    score: healthScore,
+    label: healthScore >= 75 ? 'healthy' : healthScore >= 50 ? 'partial' : 'minimal',
+  }
+
+  return {
+    name,
+    path: decodedPath,
+    encodedPath,
+    state,
+    recentSessions: [] as SessionEntry[],
+    vaultEntries,
+    features: state?.features ?? [],
+    health,
+    git,
+  }
+}
+
+/**
+ * Scan configured directories for git repos (one level deep)
+ */
+async function scanConfiguredDirs(
+  dirs: string[],
+  excludePatterns: string[],
+  knownPaths: Set<string>
+): Promise<Project[]> {
+  const results: Project[] = []
+
+  for (const dir of dirs) {
+    if (!(await exists(dir))) continue
+
+    let entries
+    try {
+      entries = await readdir(dir, { withFileTypes: true })
+    } catch {
+      continue
+    }
+
+    const candidates = entries.filter((e) => {
+      if (!e.isDirectory()) return false
+      if (excludePatterns.includes(e.name)) return false
+      return true
+    })
+
+    const projects = await Promise.all(
+      candidates.map(async (entry) => {
+        const fullPath = join(dir, entry.name)
+        if (knownPaths.has(fullPath)) return null
+
+        // Only include if it's a git repo
+        const isGitRepo = await exists(join(fullPath, '.git'))
+        if (!isGitRepo) return null
+
+        const encoded = fullPath.replace(/\//g, '-')
+        return buildProject(fullPath, encoded)
+      })
+    )
+
+    for (const p of projects) {
+      if (p) results.push(p)
+    }
+  }
+
+  return results
+}
+
+/**
+ * Discover all projects from ~/.claude/projects/ and configured directories
+ */
+export async function discoverProjects(): Promise<Project[]> {
+  const config = await readDashboardConfig()
+
+  // 1. Discover from ~/.claude/projects/
+  let claudeProjects: Project[] = []
+  if (config.scanClaudeProjects && await exists(PROJECTS_DIR)) {
+    const entries = await readdir(PROJECTS_DIR, { withFileTypes: true })
+    const projectDirs = entries.filter((e) => e.isDirectory())
+
+    const projectResults = await Promise.all(
+      projectDirs.map(async (dir) => {
+        const encodedPath = dir.name
+        const decodedPath = await decodeProjectPath(encodedPath)
+        if (!decodedPath) return null
+        return buildProject(decodedPath, encodedPath)
+      })
+    )
+    claudeProjects = projectResults.filter((p): p is NonNullable<typeof p> => p !== null)
+  }
+
+  // 2. Scan configured directories for additional git repos
+  const knownPaths = new Set(claudeProjects.map((p) => p.path))
+  const scannedProjects = await scanConfiguredDirs(
+    config.projectDirs,
+    config.excludePatterns,
+    knownPaths
+  )
+
+  const projects = [...claudeProjects, ...scannedProjects]
 
   // Enrich with session data from history
   const allSessions = await parseHistory(HISTORY_FILE)
@@ -134,7 +198,6 @@ export async function discoverProjects(): Promise<Project[]> {
   }
 
   return projects.sort((a, b) => {
-    // Sort by most recently active
     const aTime = a.recentSessions[0]?.timestamp ?? 0
     const bTime = b.recentSessions[0]?.timestamp ?? 0
     return bTime - aTime

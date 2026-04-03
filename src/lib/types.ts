@@ -141,6 +141,17 @@ export interface RalphSession {
   liveLog: string[]
 }
 
+// --- Dashboard configuration ---
+
+export interface DashboardConfig {
+  /** Directories to scan for projects (absolute paths) */
+  projectDirs: string[]
+  /** Glob patterns to exclude from scanning */
+  excludePatterns: string[]
+  /** Whether to also scan ~/.claude/projects/ (default: true) */
+  scanClaudeProjects: boolean
+}
+
 // --- Dashboard metrics ---
 
 export interface DashboardMetrics {
