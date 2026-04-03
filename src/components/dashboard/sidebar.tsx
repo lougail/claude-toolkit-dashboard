@@ -11,6 +11,7 @@ import {
   Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { SidebarSparklines } from '@/components/dashboard/sidebar-sparklines'
 
 const navItems = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
@@ -54,6 +55,8 @@ export function Sidebar() {
           )
         })}
       </nav>
+
+      <SidebarSparklines />
 
       <div className="px-5 py-4 border-t border-white/[0.06]">
         <p className="text-[11px] text-zinc-500">v0.1.0</p>

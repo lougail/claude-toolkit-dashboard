@@ -36,7 +36,7 @@
   - [x] PeriodSelector client component (7d/14d/30d via URL search params)
   - [x] Activity page: cost metric card, dynamic period for all data
   - [x] Sessions per day chart respects selected period
-  - [ ] Sparklines in global header/sidebar
+  - [x] Sparklines in sidebar (7-day tokens + sessions via /api/sparklines)
 
 ## Medium Priority
 
@@ -70,6 +70,9 @@
 - [x] US-003: Cost estimation + period selector on Activity page (Loop 3)
 - [x] US-004: Ralph real-time tracking with SSE (Loop 4)
 - [x] US-006: Multi-project config + Settings page (Loop 5)
+- [x] US-001: CI status indicator (Loop 6)
+- [x] US-001: PR count per project (Loop 7)
+- [x] US-003: Sparklines in sidebar (Loop 8)
 
 ## Notes
 
