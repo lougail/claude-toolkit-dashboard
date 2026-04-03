@@ -3,6 +3,7 @@ import { mkdir, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { projectName, decodeProjectPath } from '@/lib/config'
+import { estimateCost, formatCost } from '@/lib/utils'
 
 describe('projectName', () => {
   it('extracts last segment from a path', () => {
@@ -66,5 +67,37 @@ describe('decodeProjectPath', () => {
     const encoded = TEST_ROOT.replace(/\//g, '-') + '-Users-louis-Developer-hello-mira'
     const result = await decodeProjectPath(encoded)
     expect(result).toBe(join(TEST_ROOT, 'Users', 'louis', 'Developer', 'hello-mira'))
+  })
+})
+
+describe('estimateCost', () => {
+  it('should calculate cost using Opus pricing', () => {
+    // 1M input at $15/M + 1M output at $75/M = $90
+    const cost = estimateCost(1_000_000, 1_000_000)
+    expect(cost).toBe(90)
+  })
+
+  it('should return 0 for zero tokens', () => {
+    expect(estimateCost(0, 0)).toBe(0)
+  })
+
+  it('should handle fractional token counts', () => {
+    // 500k input = $7.50, 100k output = $7.50 → $15
+    const cost = estimateCost(500_000, 100_000)
+    expect(cost).toBe(15)
+  })
+})
+
+describe('formatCost', () => {
+  it('should format dollars with 2 decimals', () => {
+    expect(formatCost(12.5)).toBe('$12.50')
+  })
+
+  it('should format small amounts with 2 decimals', () => {
+    expect(formatCost(0.05)).toBe('$0.05')
+  })
+
+  it('should format very small amounts with 3 decimals', () => {
+    expect(formatCost(0.005)).toBe('$0.005')
   })
 })

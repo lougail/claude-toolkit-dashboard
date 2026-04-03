@@ -31,11 +31,12 @@
   - [ ] PR count per project
   - [ ] Improve health score with more granular checks
 
-- [ ] **US-003: Cost estimation & period selector**
-  - Calculate estimated cost from token usage (Anthropic pricing)
-  - Add period selector component (7d / 14d / 30d)
-  - Sessions per day chart
-  - Sparklines in global header
+- [~] **US-003: Cost estimation & period selector** (Loop 3 — partial)
+  - [x] estimateCost() + formatCost() with Opus pricing ($15/M in, $75/M out)
+  - [x] PeriodSelector client component (7d/14d/30d via URL search params)
+  - [x] Activity page: cost metric card, dynamic period for all data
+  - [x] Sessions per day chart respects selected period
+  - [ ] Sparklines in global header/sidebar
 
 ## Medium Priority
 
@@ -63,6 +64,7 @@
 - [x] Review codebase and understand architecture (Loop 1)
 - [x] US-002: 6-column kanban pipeline (Loop 1)
 - [x] US-001: Git branch + dirty count in project cards (Loop 2)
+- [x] US-003: Cost estimation + period selector on Activity page (Loop 3)
 
 ## Notes
 

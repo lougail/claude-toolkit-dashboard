@@ -1,17 +1,25 @@
-import { Zap, Clock, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { Zap, Clock, ArrowUpRight, ArrowDownRight, DollarSign } from 'lucide-react'
 import { TokenUsageChart } from '@/components/charts/token-usage-chart'
 import { MetricCard } from '@/components/dashboard/metric-card'
+import { PeriodSelector } from '@/components/dashboard/period-selector'
 import { collectAgentMessages } from '@/lib/data/scanner'
 import { parseHistory, aggregateTokenUsage } from '@/lib/parsers/jsonl'
 import { HISTORY_FILE } from '@/lib/config'
-import { formatTokenCount } from '@/lib/utils'
+import { formatTokenCount, estimateCost, formatCost } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
-export default async function ActivityPage() {
+interface PageProps {
+  searchParams: Promise<{ days?: string }>
+}
+
+export default async function ActivityPage({ searchParams }: PageProps) {
+  const params = await searchParams
+  const days = Math.min(Math.max(Number(params.days) || 30, 1), 90)
+
   const [sessions, agentMessages] = await Promise.all([
     parseHistory(HISTORY_FILE),
-    collectAgentMessages(30),
+    collectAgentMessages(days),
   ])
 
   const tokenUsage = aggregateTokenUsage(agentMessages)
@@ -19,6 +27,7 @@ export default async function ActivityPage() {
   // Aggregate stats
   const totalInput = tokenUsage.reduce((sum, d) => sum + d.input, 0)
   const totalOutput = tokenUsage.reduce((sum, d) => sum + d.output, 0)
+  const cost = estimateCost(totalInput, totalOutput)
 
   // Sessions per project
   const sessionsByProject = new Map<string, number>()
@@ -30,10 +39,10 @@ export default async function ActivityPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
 
-  // Sessions per day (last 14 days) — use latest session timestamp as reference
-  const fourteenDays = 14 * 24 * 60 * 60 * 1000
+  // Sessions per day (within selected period) — use latest session timestamp as reference
+  const periodMs = days * 24 * 60 * 60 * 1000
   const latestTimestamp = sessions[0]?.timestamp ?? 0
-  const recentSessions = sessions.filter((s) => latestTimestamp - s.timestamp < fourteenDays)
+  const recentSessions = sessions.filter((s) => latestTimestamp - s.timestamp < periodMs)
   const sessionsByDay = new Map<string, number>()
   for (const session of recentSessions) {
     const day = new Date(session.timestamp).toISOString().slice(0, 10)
@@ -42,41 +51,50 @@ export default async function ActivityPage() {
 
   return (
     <>
-      <header className="mb-8">
-        <h1 className="text-lg font-semibold text-zinc-100">Activity</h1>
-        <p className="text-sm text-zinc-500 mt-1">
-          Session and token usage metrics
-        </p>
+      <header className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-zinc-100">Activity</h1>
+          <p className="text-sm text-zinc-500 mt-1">
+            Session and token usage metrics
+          </p>
+        </div>
+        <PeriodSelector />
       </header>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-8">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 mb-8">
         <MetricCard
           label="Total Sessions"
           value={sessions.length}
           icon={Clock}
         />
         <MetricCard
-          label="Last 14 days"
+          label={`Last ${days}d`}
           value={recentSessions.length}
           icon={Zap}
         />
         <MetricCard
-          label="Input Tokens (30d)"
+          label={`Input (${days}d)`}
           value={formatTokenCount(totalInput)}
           icon={ArrowUpRight}
         />
         <MetricCard
-          label="Output Tokens (30d)"
+          label={`Output (${days}d)`}
           value={formatTokenCount(totalOutput)}
           icon={ArrowDownRight}
+        />
+        <MetricCard
+          label={`Cost (${days}d)`}
+          value={formatCost(cost)}
+          icon={DollarSign}
+          subtitle="Opus estimate"
         />
       </div>
 
       {/* Token usage chart */}
       <section className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4 mb-6" aria-label="Token usage over time">
         <h2 className="text-sm font-medium text-zinc-300 mb-4">
-          Token Usage Over Time
+          Token Usage ({days} days)
         </h2>
         <TokenUsageChart data={tokenUsage} />
       </section>
@@ -117,10 +135,10 @@ export default async function ActivityPage() {
           )}
         </section>
 
-        {/* Daily sessions (last 14 days) */}
-        <section className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4" aria-label="Daily sessions last 14 days">
+        {/* Daily sessions */}
+        <section className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4" aria-label={`Daily sessions last ${days} days`}>
           <h2 className="text-sm font-medium text-zinc-300 mb-4">
-            Daily Sessions (14 days)
+            Daily Sessions ({days}d)
           </h2>
           {sessionsByDay.size === 0 ? (
             <p className="text-sm text-zinc-500 py-4 text-center">
