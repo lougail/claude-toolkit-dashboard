@@ -1,6 +1,47 @@
 import { watch } from 'chokidar'
+import { execFile } from 'node:child_process'
 import { discoverProjects } from '@/lib/data/scanner'
 import { discoverRalphSessions } from '@/lib/parsers/ralph'
+import type { RalphSession } from '@/lib/types'
+
+/**
+ * Send a macOS notification via osascript.
+ * Fire-and-forget — errors are silently ignored.
+ */
+function sendMacNotification(title: string, message: string): void {
+  const escaped = (s: string) =>
+    s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  const script = `display notification "${escaped(message)}" with title "${escaped(title)}"`
+  execFile('osascript', ['-e', script], { timeout: 5000 }, () => {})
+}
+
+/**
+ * Detect status transitions between previous and current sessions
+ * and send macOS notifications for completed/blocked transitions.
+ */
+function notifyStatusTransitions(
+  previous: RalphSession[],
+  current: RalphSession[],
+): void {
+  const prevByProject = new Map(previous.map((s) => [s.projectName, s]))
+
+  for (const session of current) {
+    const prev = prevByProject.get(session.projectName)
+    if (!prev || prev.status !== 'running') continue
+
+    if (session.status === 'completed') {
+      sendMacNotification(
+        'Ralph terminé',
+        `${session.projectName} — ${session.tasksDone}/${session.tasksTotal} tâches`,
+      )
+    } else if (session.status === 'blocked') {
+      sendMacNotification(
+        'Ralph bloqué',
+        `${session.projectName} — ${session.lastAction ?? 'action inconnue'}`,
+      )
+    }
+  }
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -16,11 +57,13 @@ export async function GET(): Promise<Response> {
 
   const encoder = new TextEncoder()
   let watcherClosed = false
+  let previousSessions: RalphSession[] = []
 
   const stream = new ReadableStream({
     async start(controller) {
       // Send initial state immediately
       const sessions = await discoverRalphSessions(projects)
+      previousSessions = sessions
       controller.enqueue(
         encoder.encode(`data: ${JSON.stringify(sessions)}\n\n`)
       )
@@ -51,6 +94,8 @@ export async function GET(): Promise<Response> {
         if (watcherClosed) return
         try {
           const updated = await discoverRalphSessions(projects)
+          notifyStatusTransitions(previousSessions, updated)
+          previousSessions = updated
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify(updated)}\n\n`)
           )

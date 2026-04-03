@@ -1,7 +1,6 @@
 import {
   FolderOpen,
   GitBranch,
-  GitPullRequest,
   Rocket,
   MessageSquare,
   Zap,
@@ -10,66 +9,22 @@ import {
   AlertCircle,
   CheckCircle,
   Circle,
-  FileDiff,
-  CircleDot,
-  Loader2,
-  AlertTriangle,
-  Info,
-  Bell,
 } from 'lucide-react'
-import type { CIStatus, AlertSeverity } from '@/lib/types'
+import Link from 'next/link'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { TokenUsageChart } from '@/components/charts/token-usage-chart'
 import { PipelineChart } from '@/components/charts/pipeline-chart'
 import { EmptyState } from '@/components/dashboard/empty-state'
 import { RefreshIndicator } from '@/components/dashboard/refresh-indicator'
-import { RalphTracker } from '@/components/dashboard/ralph-tracker'
-import { TabBadge } from '@/components/dashboard/tab-badge'
 import { getDashboardMetrics, discoverProjects } from '@/lib/data/scanner'
 import { parseSteering } from '@/lib/parsers/steering'
-import { discoverRalphSessions } from '@/lib/parsers/ralph'
-import { deriveAlerts } from '@/lib/data/alerts'
 import { formatRelativeTime, cn } from '@/lib/utils'
-
-const ALERT_STYLES: Record<AlertSeverity, { bg: string; text: string; icon: typeof AlertCircle }> = {
-  error:   { bg: 'bg-red-500/10 border-red-500/20', text: 'text-red-400', icon: AlertCircle },
-  warning: { bg: 'bg-amber-500/10 border-amber-500/20', text: 'text-amber-400', icon: AlertTriangle },
-  info:    { bg: 'bg-blue-500/10 border-blue-500/20', text: 'text-blue-400', icon: Info },
-}
-
-const CI_DISPLAY: Record<CIStatus, { label: string; color: string; icon: 'check' | 'alert' | 'dot' | 'loader' | null }> = {
-  passing:    { label: 'CI passing',    color: 'text-emerald-400', icon: 'check' },
-  failing:    { label: 'CI failing',    color: 'text-red-400',     icon: 'alert' },
-  pending:    { label: 'CI running',    color: 'text-amber-400',   icon: 'loader' },
-  configured: { label: 'CI configured', color: 'text-zinc-400',    icon: 'dot' },
-  none:       { label: '',              color: '',                  icon: null },
-}
-
-function CIBadge({ status }: { status: CIStatus }) {
-  const display = CI_DISPLAY[status]
-  if (!display.icon) return null
-
-  const Icon = display.icon === 'check' ? CheckCircle
-    : display.icon === 'alert' ? AlertCircle
-    : display.icon === 'loader' ? Loader2
-    : CircleDot
-
-  return (
-    <span className={cn('inline-flex items-center gap-1 text-[11px]', display.color)}>
-      <Icon className={cn('size-3 shrink-0', display.icon === 'loader' && 'animate-spin')} aria-hidden="true" />
-      {display.label}
-    </span>
-  )
-}
 
 export const dynamic = 'force-dynamic'
 
 export default async function OverviewPage() {
   const projects = await discoverProjects()
-  const [metrics, ralphSessions] = await Promise.all([
-    getDashboardMetrics(projects),
-    discoverRalphSessions(projects),
-  ])
+  const metrics = await getDashboardMetrics(projects)
 
   // Load steering for the first project (or current project)
   const firstProject = projects[0]
@@ -77,24 +32,19 @@ export default async function OverviewPage() {
     ? await parseSteering(firstProject.path)
     : []
 
-  // Derive alerts from project data
-  const alerts = deriveAlerts(projects, ralphSessions)
+  // Only show projects with recent activity or toolkit config
+  const activeProjects = projects.filter(
+    (p) => p.recentSessions.length > 0 || p.health.score > 0
+  )
 
-  // Only show projects with recent activity or toolkit config, sorted by last activity
-  const activeProjects = projects
-    .filter((p) => p.recentSessions.length > 0 || p.health.score > 0)
-    .sort((a, b) => (b.lastActivity ?? 0) - (a.lastActivity ?? 0))
-
-  // Count features per v2 status across all projects
-  const statusCounts: Record<string, number> = {}
-  for (const project of projects) {
-    for (const feature of project.features) {
-      statusCounts[feature.status] = (statusCounts[feature.status] ?? 0) + 1
-    }
-  }
-  const pipelineData = ['idea', 'prd', 'building', 'review', 'ship', 'done']
-    .map((status) => ({ status, count: statusCounts[status] ?? 0 }))
-    .filter((d) => d.count > 0)
+  const pipelineData = [
+    {
+      status: 'planning',
+      count: metrics.totalFeatures - metrics.activeFeatures - metrics.shippedFeatures,
+    },
+    { status: 'in-progress', count: metrics.activeFeatures },
+    { status: 'shipped', count: metrics.shippedFeatures },
+  ].filter((d) => d.count > 0)
 
   return (
     <>
@@ -107,67 +57,6 @@ export default async function OverviewPage() {
         </div>
         <RefreshIndicator />
       </header>
-
-      {/* Tab badge for alert count */}
-      <TabBadge count={alerts.filter((a) => a.severity !== 'info').length} />
-
-      {/* Alerts section */}
-      {alerts.length > 0 && (
-        <section
-          className="mb-6 rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4"
-          aria-label="Active alerts"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <Bell className="size-4 text-zinc-400" aria-hidden="true" />
-            <h2 className="text-sm font-medium text-zinc-300">
-              Alerts
-            </h2>
-            <span className="text-[11px] text-zinc-500">
-              {alerts.length}
-            </span>
-          </div>
-          <div className="space-y-2">
-            {alerts.slice(0, 8).map((alert) => {
-              const style = ALERT_STYLES[alert.severity]
-              const Icon = style.icon
-              return (
-                <div
-                  key={alert.id}
-                  className={cn(
-                    'flex items-start gap-2.5 rounded-md border px-3 py-2',
-                    style.bg,
-                  )}
-                >
-                  <Icon className={cn('size-3.5 mt-0.5 shrink-0', style.text)} aria-hidden="true" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className={cn('text-xs font-medium', style.text)}>
-                        {alert.title}
-                      </span>
-                      <span className="text-[10px] text-zinc-500">
-                        {alert.project}
-                      </span>
-                    </div>
-                    {alert.detail && (
-                      <p className="text-[11px] text-zinc-500 mt-0.5 truncate">
-                        {alert.detail}
-                      </p>
-                    )}
-                  </div>
-                  <span className="text-[10px] text-zinc-600 shrink-0">
-                    {formatRelativeTime(alert.timestamp)}
-                  </span>
-                </div>
-              )
-            })}
-            {alerts.length > 8 && (
-              <p className="text-[11px] text-zinc-500 text-center pt-1">
-                +{alerts.length - 8} more
-              </p>
-            )}
-          </div>
-        </section>
-      )}
 
       {/* Metrics grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 mb-8">
@@ -233,13 +122,6 @@ export default async function OverviewPage() {
           <PipelineChart data={pipelineData} />
         </section>
       </div>
-
-      {/* Ralph sessions */}
-      {ralphSessions.length > 0 && (
-        <div className="mt-6">
-          <RalphTracker initialSessions={ralphSessions} />
-        </div>
-      )}
 
       {/* Steering docs summary */}
       {steeringDocs.length > 0 && (
@@ -342,9 +224,10 @@ export default async function OverviewPage() {
         ) : (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {activeProjects.map((project) => (
-              <div
+              <Link
                 key={project.encodedPath}
-                className="rounded-md border border-white/[0.04] bg-zinc-900/30 px-4 py-3"
+                href={'/project/' + project.encodedPath}
+                className="rounded-md border border-white/[0.04] bg-zinc-900/30 px-4 py-3 block transition-colors hover:border-white/[0.12] hover:bg-zinc-900/60"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-zinc-200">
@@ -363,32 +246,9 @@ export default async function OverviewPage() {
                     {project.health.score}%
                   </span>
                 </div>
-                {/* Git branch + dirty indicator */}
-                <div className="flex items-center gap-2 mt-1.5">
-                  {project.git.branch && (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-zinc-400 font-mono">
-                      <GitBranch className="size-3 shrink-0" aria-hidden="true" />
-                      {project.git.branch}
-                    </span>
-                  )}
-                  {project.git.dirtyCount > 0 && (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-amber-400">
-                      <FileDiff className="size-3 shrink-0" aria-hidden="true" />
-                      {project.git.dirtyCount} dirty
-                    </span>
-                  )}
-                  <CIBadge status={project.git.ciStatus} />
-                </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <p className="text-[11px] text-zinc-600 font-mono truncate">
-                    {project.path}
-                  </p>
-                  {project.lastActivity && (
-                    <span className="text-[10px] text-zinc-500 shrink-0">
-                      {formatRelativeTime(project.lastActivity)}
-                    </span>
-                  )}
-                </div>
+                <p className="text-[11px] text-zinc-500 mt-0.5 font-mono truncate">
+                  {project.path}
+                </p>
                 <div className="flex items-center gap-3 mt-2">
                   <span className="text-[11px] text-zinc-500">
                     {project.features.length} features
@@ -399,12 +259,6 @@ export default async function OverviewPage() {
                   <span className="text-[11px] text-zinc-500">
                     {project.vaultEntries.length} vault
                   </span>
-                  {project.git.openPRs > 0 && (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-blue-400">
-                      <GitPullRequest className="size-3 shrink-0" aria-hidden="true" />
-                      {project.git.openPRs} PR{project.git.openPRs > 1 ? 's' : ''}
-                    </span>
-                  )}
                 </div>
                 {/* Health details */}
                 <div className="flex items-center gap-2 mt-2" role="list" aria-label="Project health checks">
@@ -413,8 +267,6 @@ export default async function OverviewPage() {
                     { label: 'vault', ok: project.health.hasVault },
                     { label: 'steering', ok: project.health.hasSteering },
                     { label: 'tests', ok: project.health.hasTests },
-                    { label: 'CI', ok: project.health.hasCI },
-                    { label: 'audit', ok: project.health.hasAudit },
                   ].map(({ label, ok }) => (
                     <span
                       key={label}
@@ -429,7 +281,7 @@ export default async function OverviewPage() {
                     </span>
                   ))}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
