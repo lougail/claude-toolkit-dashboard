@@ -28,7 +28,7 @@
   - [x] getGitInfo() via execFile('git') with 3s timeout
   - [x] Project cards show branch name + dirty file count
   - [x] CI status indicator (.github/workflows detection + gh run status)
-  - [ ] PR count per project
+  - [x] PR count per project (gh pr list with graceful fallback)
   - [ ] Improve health score with more granular checks
 
 - [~] **US-003: Cost estimation & period selector** (Loop 3 — partial)

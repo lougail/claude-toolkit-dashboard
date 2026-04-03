@@ -94,17 +94,43 @@ async function getCIStatus(projectPath: string): Promise<CIStatus> {
   }
 }
 
+/**
+ * Count open PRs for a project using gh CLI.
+ * Returns 0 if gh is unavailable or the repo has no remote.
+ */
+async function getOpenPRCount(projectPath: string): Promise<number> {
+  const result = await new Promise<string>((resolve) => {
+    execFile(
+      'gh',
+      ['pr', 'list', '--state', 'open', '--json', 'number', '--limit', '100'],
+      { cwd: projectPath, timeout: 5000 },
+      (err, stdout) => resolve(err ? '' : stdout.trim()),
+    )
+  })
+
+  if (!result) return 0
+
+  try {
+    const prs: Array<{ number: number }> = JSON.parse(result)
+    return prs.length
+  } catch {
+    return 0
+  }
+}
+
 async function getGitInfo(projectPath: string): Promise<GitInfo> {
-  const [branch, statusOutput, ciStatus] = await Promise.all([
+  const [branch, statusOutput, ciStatus, openPRs] = await Promise.all([
     execGit(['rev-parse', '--abbrev-ref', 'HEAD'], projectPath),
     execGit(['status', '--porcelain', '--untracked-files=no'], projectPath),
     getCIStatus(projectPath),
+    getOpenPRCount(projectPath),
   ])
 
   return {
     branch: branch || null,
     dirtyCount: statusOutput ? statusOutput.split('\n').length : 0,
     ciStatus,
+    openPRs,
   }
 }
 
@@ -118,7 +144,7 @@ async function buildProject(decodedPath: string, encodedPath: string): Promise<P
   const [state, vaultEntries, git] = await Promise.all([
     projectExists ? parseState(decodedPath) : Promise.resolve(null),
     projectExists ? parseVault(join(decodedPath, 'vault')) : Promise.resolve([]),
-    projectExists ? getGitInfo(decodedPath) : Promise.resolve({ branch: null, dirtyCount: 0, ciStatus: 'none' as const }),
+    projectExists ? getGitInfo(decodedPath) : Promise.resolve({ branch: null, dirtyCount: 0, ciStatus: 'none' as const, openPRs: 0 }),
   ])
 
   const hasState = state !== null

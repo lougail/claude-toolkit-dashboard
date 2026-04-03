@@ -1,6 +1,7 @@
 import {
   FolderOpen,
   GitBranch,
+  GitPullRequest,
   Rocket,
   MessageSquare,
   Zap,
@@ -316,6 +317,12 @@ export default async function OverviewPage() {
                   <span className="text-[11px] text-zinc-500">
                     {project.vaultEntries.length} vault
                   </span>
+                  {project.git.openPRs > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-blue-400">
+                      <GitPullRequest className="size-3 shrink-0" aria-hidden="true" />
+                      {project.git.openPRs} PR{project.git.openPRs > 1 ? 's' : ''}
+                    </span>
+                  )}
                 </div>
                 {/* Health details */}
                 <div className="flex items-center gap-2 mt-2" role="list" aria-label="Project health checks">

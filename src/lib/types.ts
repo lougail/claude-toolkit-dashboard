@@ -116,6 +116,7 @@ export interface GitInfo {
   branch: string | null
   dirtyCount: number
   ciStatus: CIStatus
+  openPRs: number
 }
 
 // --- Aggregated project data ---
