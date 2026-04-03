@@ -8,8 +8,10 @@ import {
   ShieldCheck,
   Scale,
   Activity,
+  Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { SidebarSparklines } from '@/components/dashboard/sidebar-sparklines'
 
 const navItems = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
@@ -17,6 +19,7 @@ const navItems = [
   { href: '/audits', label: 'Audits', icon: ShieldCheck },
   { href: '/decisions', label: 'Decisions', icon: Scale },
   { href: '/activity', label: 'Activity', icon: Activity },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export function Sidebar() {
@@ -52,6 +55,8 @@ export function Sidebar() {
           )
         })}
       </nav>
+
+      <SidebarSparklines />
 
       <div className="px-5 py-4 border-t border-white/[0.06]">
         <p className="text-[11px] text-zinc-500">v0.1.0</p>

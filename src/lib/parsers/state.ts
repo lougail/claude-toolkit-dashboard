@@ -1,11 +1,28 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { ProjectState, Feature } from '@/lib/types'
+import type { ProjectState, Feature, FeatureStatus } from '@/lib/types'
+
+/** Map legacy v1 statuses to v2 6-phase workflow */
+const LEGACY_STATUS_MAP: Record<string, FeatureStatus> = {
+  planning: 'prd',
+  'in-progress': 'building',
+  shipped: 'done',
+}
+
+const VALID_STATUSES = new Set<string>([
+  'idea', 'prd', 'building', 'review', 'ship', 'done',
+  // Accept legacy statuses too — they'll be normalized
+  'planning', 'in-progress', 'shipped',
+])
+
+function normalizeStatus(status: string): FeatureStatus {
+  return LEGACY_STATUS_MAP[status] ?? (status as FeatureStatus)
+}
 
 function isFeature(v: unknown): v is Feature {
   if (!v || typeof v !== 'object') return false
   const f = v as Record<string, unknown>
-  return typeof f.slug === 'string' && typeof f.status === 'string'
+  return typeof f.slug === 'string' && typeof f.status === 'string' && VALID_STATUSES.has(f.status as string)
 }
 
 function isProjectState(v: unknown): v is ProjectState {
@@ -33,10 +50,13 @@ export async function parseState(projectPath: string): Promise<ProjectState | nu
 
     if (!isProjectState(data)) return null
 
-    // Reconstruct with validated features only
+    // Reconstruct with validated features, normalizing legacy statuses
     return {
       ...data,
-      features: data.features.filter(isFeature),
+      features: data.features.filter(isFeature).map((f) => ({
+        ...f,
+        status: normalizeStatus(f.status),
+      })),
     }
   } catch {
     return null

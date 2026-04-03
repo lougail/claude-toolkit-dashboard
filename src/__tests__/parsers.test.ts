@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { parseState } from '@/lib/parsers/state'
 import { parseHistory, parseAgentMessages, aggregateTokenUsage } from '@/lib/parsers/jsonl'
 import { parseVault } from '@/lib/parsers/markdown'
+import { parseRalphSession } from '@/lib/parsers/ralph'
 
 const TEST_DIR = join(tmpdir(), 'dashboard-test-' + Date.now())
 
@@ -122,6 +123,34 @@ describe('parseState', () => {
     expect(state).not.toBeNull()
     expect(state!.features).toHaveLength(1)
     expect(state!.features[0]!.slug).toBe('valid')
+  })
+
+  it('normalizes legacy statuses to v2 phases', async () => {
+    const projectDir = join(TEST_DIR, 'project-legacy-statuses')
+    await mkdir(join(projectDir, '.claude'), { recursive: true })
+    await writeFile(
+      join(projectDir, '.claude', 'state.json'),
+      JSON.stringify({
+        project: 'legacy',
+        updatedAt: '2026-04-01',
+        features: [
+          { slug: 'feat-planning', status: 'planning' },
+          { slug: 'feat-inprogress', status: 'in-progress' },
+          { slug: 'feat-shipped', status: 'shipped' },
+          { slug: 'feat-building', status: 'building' },
+        ],
+        decisions: { pending: 0, validated: 0, rejected: 0 },
+        lastSession: { date: null, branch: null, lastAction: null, nextStep: null },
+      })
+    )
+
+    const state = await parseState(projectDir)
+    expect(state).not.toBeNull()
+    expect(state!.features).toHaveLength(4)
+    expect(state!.features[0]!.status).toBe('prd')
+    expect(state!.features[1]!.status).toBe('building')
+    expect(state!.features[2]!.status).toBe('done')
+    expect(state!.features[3]!.status).toBe('building')
   })
 })
 
@@ -317,5 +346,60 @@ We decided to use JWT because...`
     expect(entries).toHaveLength(1)
     expect(entries[0]!.title).toBe('note')
     expect(entries[0]!.type).toBe('journal')
+  })
+})
+
+// --- ralph.ts ---
+
+describe('parseRalphSession', () => {
+  it('should return null when .ralph/ does not exist', async () => {
+    const result = await parseRalphSession(join(TEST_DIR, 'no-ralph'), 'test')
+    expect(result).toBeNull()
+  })
+
+  it('should parse status.json and count fix_plan.md checkboxes', async () => {
+    const projectDir = join(TEST_DIR, 'ralph-project')
+    const ralphDir = join(projectDir, '.ralph')
+    await mkdir(ralphDir, { recursive: true })
+
+    await writeFile(
+      join(ralphDir, 'status.json'),
+      JSON.stringify({
+        status: 'running',
+        loop_count: 3,
+        last_action: 'executing',
+        timestamp: '2026-04-03T12:00:00Z',
+      })
+    )
+    await writeFile(
+      join(ralphDir, 'fix_plan.md'),
+      '# Plan\n- [x] Done task\n- [x] Another done\n- [ ] Pending task\n- [ ] Also pending\n'
+    )
+    await writeFile(join(ralphDir, 'live.log'), 'line 1\nline 2\nline 3\n')
+
+    const result = await parseRalphSession(projectDir, 'ralph-project')
+    expect(result).not.toBeNull()
+    expect(result!.status).toBe('running')
+    expect(result!.loopCount).toBe(3)
+    expect(result!.tasksDone).toBe(2)
+    expect(result!.tasksTotal).toBe(4)
+    expect(result!.liveLog).toHaveLength(3)
+  })
+
+  it('should normalize legacy status values', async () => {
+    const projectDir = join(TEST_DIR, 'ralph-completed')
+    const ralphDir = join(projectDir, '.ralph')
+    await mkdir(ralphDir, { recursive: true })
+
+    await writeFile(
+      join(ralphDir, 'status.json'),
+      JSON.stringify({ status: 'completed' })
+    )
+
+    const result = await parseRalphSession(projectDir, 'done-project')
+    expect(result).not.toBeNull()
+    expect(result!.status).toBe('completed')
+    expect(result!.tasksDone).toBe(0)
+    expect(result!.tasksTotal).toBe(0)
   })
 })

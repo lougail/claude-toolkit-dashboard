@@ -10,6 +10,7 @@ import {
   CheckCircle,
   Circle,
 } from 'lucide-react'
+import Link from 'next/link'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { TokenUsageChart } from '@/components/charts/token-usage-chart'
 import { PipelineChart } from '@/components/charts/pipeline-chart'
@@ -36,14 +37,16 @@ export default async function OverviewPage() {
     (p) => p.recentSessions.length > 0 || p.health.score > 0
   )
 
-  const pipelineData = [
-    {
-      status: 'planning',
-      count: metrics.totalFeatures - metrics.activeFeatures - metrics.shippedFeatures,
-    },
-    { status: 'in-progress', count: metrics.activeFeatures },
-    { status: 'shipped', count: metrics.shippedFeatures },
-  ].filter((d) => d.count > 0)
+  // Count features per v2 status across all projects
+  const statusCounts: Record<string, number> = {}
+  for (const project of projects) {
+    for (const feature of project.features) {
+      statusCounts[feature.status] = (statusCounts[feature.status] ?? 0) + 1
+    }
+  }
+  const pipelineData = ['idea', 'prd', 'building', 'review', 'ship', 'done']
+    .map((status) => ({ status, count: statusCounts[status] ?? 0 }))
+    .filter((d) => d.count > 0)
 
   return (
     <>
@@ -223,9 +226,10 @@ export default async function OverviewPage() {
         ) : (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {activeProjects.map((project) => (
-              <div
+              <Link
                 key={project.encodedPath}
-                className="rounded-md border border-white/[0.04] bg-zinc-900/30 px-4 py-3"
+                href={'/project/' + project.encodedPath}
+                className="rounded-md border border-white/[0.04] bg-zinc-900/30 px-4 py-3 block transition-colors hover:border-white/[0.12] hover:bg-zinc-900/60"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-zinc-200">
@@ -279,7 +283,7 @@ export default async function OverviewPage() {
                     </span>
                   ))}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

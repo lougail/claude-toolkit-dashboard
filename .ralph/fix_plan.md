@@ -1,0 +1,87 @@
+# Ralph Fix Plan — Dashboard v2
+
+## Gap Analysis (v1 → v2 PRD)
+
+### Current State
+- Overview page: basic metrics + project grid (no branch/CI/PRs/dirty info)
+- Pipeline: 3 columns (planning, in-progress, shipped) — PRD wants 6
+- Activity: token charts + sessions — PRD wants cost estimation + period selector
+- Audits: flat list of audit results
+- Decisions: vault entry browser with filters
+
+### PRD v2 Targets
+- US-001: Mission Control — multi-project grid with branch, CI, PRs, dirty files, health
+- US-002: Feature Timeline — 6-column kanban (Idée → PRD → Building → Review → Ship → Done)
+- US-003: Metrics & Cost — tokens + cost estimation + period selector + sparklines
+- US-004: Ralph tracking — real-time SSE with progress bars
+- US-005: Notifications — macOS notifications + browser badge + alerts section
+- US-006: Configuration — config.json + settings page
+
+## High Priority
+
+- [x] **US-002: Upgrade Pipeline to 6-column kanban** (Loop 1)
+  - Extended Feature.status to 6 phases with legacy mapping
+  - 6-column responsive layout with icons and horizontal scroll
+
+- [x] **US-001: Enhance Mission Control** (Loops 2-9)
+  - [x] Added GitInfo type (branch + dirtyCount) to Project
+  - [x] getGitInfo() via execFile('git') with 3s timeout
+  - [x] Project cards show branch name + dirty file count
+  - [x] CI status indicator (.github/workflows detection + gh run status)
+  - [x] PR count per project (gh pr list with graceful fallback)
+  - [x] Granular health score: 6 weighted checks (state, vault, steering, tests×2, CI×1-2, audit)
+  - [x] lastActivity from git log for project sorting
+  - [x] Projects sorted by most recent activity
+
+- [x] **US-003: Cost estimation & period selector** (Loop 3)
+  - [x] estimateCost() + formatCost() with Opus pricing ($15/M in, $75/M out)
+  - [x] PeriodSelector client component (7d/14d/30d via URL search params)
+  - [x] Activity page: cost metric card, dynamic period for all data
+  - [x] Sessions per day chart respects selected period
+  - [x] Sparklines in sidebar (7-day tokens + sessions via /api/sparklines)
+
+## Medium Priority
+
+- [x] **US-004: Ralph real-time tracking** (Loop 4)
+  - [x] Ralph parser: reads status.json + counts fix_plan.md checkboxes
+  - [x] SSE API route (/api/ralph-stream) with chokidar filesystem watcher
+  - [x] RalphTracker client component with live updates via EventSource
+  - [x] Integrated into Overview page (shows active sessions with progress bars)
+  - [x] Live log display for running sessions
+
+- [x] **US-006: Multi-project configuration** (Loop 5)
+  - [x] DashboardConfig type (projectDirs, excludePatterns, scanClaudeProjects)
+  - [x] Config reader/writer persisted to ~/.claude/dashboard/config.json
+  - [x] discoverProjects() scans configured dirs for git repos (one level deep)
+  - [x] API route GET/PUT /api/config
+  - [x] Settings page with directory list, exclude patterns, scan toggle
+
+## Low Priority
+
+- [x] **US-005: Notifications** (Loop 10)
+  - [x] Alert derivation engine (CI failing, low health, dirty files, audit blockers, Ralph blocked/done)
+  - [x] Alerts section at top of Mission Control (max 8 visible, sorted by severity)
+  - [x] Browser tab badge — "(N) Dashboard" for error+warning count
+  - [x] macOS notifications via POST /api/notify (osascript display notification)
+
+## Completed
+
+- [x] Project enabled for Ralph
+- [x] Review codebase and understand architecture (Loop 1)
+- [x] US-002: 6-column kanban pipeline (Loop 1)
+- [x] US-001: Git branch + dirty count in project cards (Loop 2)
+- [x] US-003: Cost estimation + period selector on Activity page (Loop 3)
+- [x] US-004: Ralph real-time tracking with SSE (Loop 4)
+- [x] US-006: Multi-project config + Settings page (Loop 5)
+- [x] US-001: CI status indicator (Loop 6)
+- [x] US-001: PR count per project (Loop 7)
+- [x] US-003: Sparklines in sidebar (Loop 8)
+- [x] US-001: Granular weighted health score + lastActivity sorting (Loop 9)
+- [x] US-005: Notifications — alerts section, tab badge, macOS notify API (Loop 10)
+
+## Notes
+
+- Feature.status type change requires backward compat with existing state.json files
+- SSE implementation needs careful cleanup (chokidar watchers, connection handling)
+- Cost estimation uses public Anthropic pricing — needs to stay updated
+- All data is read-only from local filesystem — no writes to project dirs

@@ -17,9 +17,15 @@ export interface ProjectState {
   }
 }
 
+/** All 6 phases of the feature workflow */
+export type FeatureStatus = 'idea' | 'prd' | 'building' | 'review' | 'ship' | 'done'
+
+/** Legacy statuses from v1 state.json files */
+export type LegacyFeatureStatus = 'planning' | 'in-progress' | 'shipped'
+
 export interface Feature {
   slug: string
-  status: 'planning' | 'in-progress' | 'shipped'
+  status: FeatureStatus
   prd: string | null
   ralph: {
     active: boolean
@@ -96,8 +102,22 @@ export interface ProjectHealth {
   hasVault: boolean
   hasSteering: boolean
   hasTests: boolean
+  hasCI: boolean
+  hasAudit: boolean
   score: number // 0-100
   label: 'healthy' | 'partial' | 'minimal'
+}
+
+// --- Git info (live from filesystem) ---
+
+/** CI status detected from .github/workflows + gh CLI */
+export type CIStatus = 'passing' | 'failing' | 'pending' | 'configured' | 'none'
+
+export interface GitInfo {
+  branch: string | null
+  dirtyCount: number
+  ciStatus: CIStatus
+  openPRs: number
 }
 
 // --- Aggregated project data ---
@@ -111,6 +131,46 @@ export interface Project {
   vaultEntries: VaultEntry[]
   features: Feature[]
   health: ProjectHealth
+  git: GitInfo
+  lastActivity: number | null // epoch ms from latest git commit
+}
+
+// --- Ralph session tracking ---
+
+export interface RalphSession {
+  projectName: string
+  projectPath: string
+  status: 'running' | 'completed' | 'blocked' | 'unknown'
+  loopCount: number
+  tasksDone: number
+  tasksTotal: number
+  lastAction: string | null
+  timestamp: string | null
+  liveLog: string[]
+}
+
+// --- Dashboard configuration ---
+
+export interface DashboardConfig {
+  /** Directories to scan for projects (absolute paths) */
+  projectDirs: string[]
+  /** Glob patterns to exclude from scanning */
+  excludePatterns: string[]
+  /** Whether to also scan ~/.claude/projects/ (default: true) */
+  scanClaudeProjects: boolean
+}
+
+// --- Alerts ---
+
+export type AlertSeverity = 'error' | 'warning' | 'info'
+
+export interface Alert {
+  id: string
+  severity: AlertSeverity
+  title: string
+  detail: string | null
+  project: string
+  timestamp: number
 }
 
 // --- Dashboard metrics ---
