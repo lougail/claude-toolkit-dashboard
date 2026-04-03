@@ -33,7 +33,7 @@
   - [x] lastActivity from git log for project sorting
   - [x] Projects sorted by most recent activity
 
-- [~] **US-003: Cost estimation & period selector** (Loop 3 — partial)
+- [x] **US-003: Cost estimation & period selector** (Loop 3)
   - [x] estimateCost() + formatCost() with Opus pricing ($15/M in, $75/M out)
   - [x] PeriodSelector client component (7d/14d/30d via URL search params)
   - [x] Activity page: cost metric card, dynamic period for all data
@@ -58,10 +58,11 @@
 
 ## Low Priority
 
-- [ ] **US-005: Notifications**
-  - macOS notifications via osascript
-  - Browser tab badge for unread alerts
-  - Alerts section in Mission Control
+- [x] **US-005: Notifications** (Loop 10)
+  - [x] Alert derivation engine (CI failing, low health, dirty files, audit blockers, Ralph blocked/done)
+  - [x] Alerts section at top of Mission Control (max 8 visible, sorted by severity)
+  - [x] Browser tab badge — "(N) Dashboard" for error+warning count
+  - [x] macOS notifications via POST /api/notify (osascript display notification)
 
 ## Completed
 
@@ -76,6 +77,7 @@
 - [x] US-001: PR count per project (Loop 7)
 - [x] US-003: Sparklines in sidebar (Loop 8)
 - [x] US-001: Granular weighted health score + lastActivity sorting (Loop 9)
+- [x] US-005: Notifications — alerts section, tab badge, macOS notify API (Loop 10)
 
 ## Notes
 

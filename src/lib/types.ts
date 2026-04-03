@@ -160,6 +160,19 @@ export interface DashboardConfig {
   scanClaudeProjects: boolean
 }
 
+// --- Alerts ---
+
+export type AlertSeverity = 'error' | 'warning' | 'info'
+
+export interface Alert {
+  id: string
+  severity: AlertSeverity
+  title: string
+  detail: string | null
+  project: string
+  timestamp: number
+}
+
 // --- Dashboard metrics ---
 
 export interface DashboardMetrics {

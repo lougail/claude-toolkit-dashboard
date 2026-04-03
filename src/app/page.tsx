@@ -13,18 +13,29 @@ import {
   FileDiff,
   CircleDot,
   Loader2,
+  AlertTriangle,
+  Info,
+  Bell,
 } from 'lucide-react'
-import type { CIStatus } from '@/lib/types'
+import type { CIStatus, AlertSeverity } from '@/lib/types'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { TokenUsageChart } from '@/components/charts/token-usage-chart'
 import { PipelineChart } from '@/components/charts/pipeline-chart'
 import { EmptyState } from '@/components/dashboard/empty-state'
 import { RefreshIndicator } from '@/components/dashboard/refresh-indicator'
 import { RalphTracker } from '@/components/dashboard/ralph-tracker'
+import { TabBadge } from '@/components/dashboard/tab-badge'
 import { getDashboardMetrics, discoverProjects } from '@/lib/data/scanner'
 import { parseSteering } from '@/lib/parsers/steering'
 import { discoverRalphSessions } from '@/lib/parsers/ralph'
+import { deriveAlerts } from '@/lib/data/alerts'
 import { formatRelativeTime, cn } from '@/lib/utils'
+
+const ALERT_STYLES: Record<AlertSeverity, { bg: string; text: string; icon: typeof AlertCircle }> = {
+  error:   { bg: 'bg-red-500/10 border-red-500/20', text: 'text-red-400', icon: AlertCircle },
+  warning: { bg: 'bg-amber-500/10 border-amber-500/20', text: 'text-amber-400', icon: AlertTriangle },
+  info:    { bg: 'bg-blue-500/10 border-blue-500/20', text: 'text-blue-400', icon: Info },
+}
 
 const CI_DISPLAY: Record<CIStatus, { label: string; color: string; icon: 'check' | 'alert' | 'dot' | 'loader' | null }> = {
   passing:    { label: 'CI passing',    color: 'text-emerald-400', icon: 'check' },
@@ -66,6 +77,9 @@ export default async function OverviewPage() {
     ? await parseSteering(firstProject.path)
     : []
 
+  // Derive alerts from project data
+  const alerts = deriveAlerts(projects, ralphSessions)
+
   // Only show projects with recent activity or toolkit config, sorted by last activity
   const activeProjects = projects
     .filter((p) => p.recentSessions.length > 0 || p.health.score > 0)
@@ -93,6 +107,67 @@ export default async function OverviewPage() {
         </div>
         <RefreshIndicator />
       </header>
+
+      {/* Tab badge for alert count */}
+      <TabBadge count={alerts.filter((a) => a.severity !== 'info').length} />
+
+      {/* Alerts section */}
+      {alerts.length > 0 && (
+        <section
+          className="mb-6 rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4"
+          aria-label="Active alerts"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Bell className="size-4 text-zinc-400" aria-hidden="true" />
+            <h2 className="text-sm font-medium text-zinc-300">
+              Alerts
+            </h2>
+            <span className="text-[11px] text-zinc-500">
+              {alerts.length}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {alerts.slice(0, 8).map((alert) => {
+              const style = ALERT_STYLES[alert.severity]
+              const Icon = style.icon
+              return (
+                <div
+                  key={alert.id}
+                  className={cn(
+                    'flex items-start gap-2.5 rounded-md border px-3 py-2',
+                    style.bg,
+                  )}
+                >
+                  <Icon className={cn('size-3.5 mt-0.5 shrink-0', style.text)} aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className={cn('text-xs font-medium', style.text)}>
+                        {alert.title}
+                      </span>
+                      <span className="text-[10px] text-zinc-500">
+                        {alert.project}
+                      </span>
+                    </div>
+                    {alert.detail && (
+                      <p className="text-[11px] text-zinc-500 mt-0.5 truncate">
+                        {alert.detail}
+                      </p>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-zinc-600 shrink-0">
+                    {formatRelativeTime(alert.timestamp)}
+                  </span>
+                </div>
+              )
+            })}
+            {alerts.length > 8 && (
+              <p className="text-[11px] text-zinc-500 text-center pt-1">
+                +{alerts.length - 8} more
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Metrics grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 mb-8">
