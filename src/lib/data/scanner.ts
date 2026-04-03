@@ -157,17 +157,37 @@ async function buildProject(decodedPath: string, encodedPath: string): Promise<P
   )
 
   const hasCI = git.ciStatus !== 'none'
-  const checks = [hasState, hasVault, hasSteering, hasTests, hasCI]
-  const healthScore = Math.round((checks.filter(Boolean).length / checks.length) * 100)
+  const hasAudit = (state?.features ?? []).some((f) => f.audit.score !== null)
+
+  // Weighted scoring: CI passing/tests are worth more than mere presence checks
+  const weights: Array<[boolean, number]> = [
+    [hasState, 1],
+    [hasVault, 1],
+    [hasSteering, 1],
+    [hasTests, 2],       // tests are high-value
+    [hasCI, git.ciStatus === 'passing' ? 2 : 1], // passing CI worth more
+    [hasAudit, 1],
+  ]
+  const maxScore = weights.reduce((sum, [, w]) => sum + w, 0)
+  const rawScore = weights.reduce((sum, [ok, w]) => sum + (ok ? w : 0), 0)
+  const healthScore = Math.round((rawScore / maxScore) * 100)
+
   const health: ProjectHealth = {
     hasState,
     hasVault,
     hasSteering,
     hasTests,
     hasCI,
+    hasAudit,
     score: healthScore,
     label: healthScore >= 75 ? 'healthy' : healthScore >= 50 ? 'partial' : 'minimal',
   }
+
+  // Last activity from most recent git commit
+  const lastCommitTs = projectExists
+    ? await execGit(['log', '-1', '--format=%ct'], decodedPath)
+    : ''
+  const lastActivity = lastCommitTs ? parseInt(lastCommitTs, 10) * 1000 : null
 
   return {
     name,
@@ -179,6 +199,7 @@ async function buildProject(decodedPath: string, encodedPath: string): Promise<P
     features: state?.features ?? [],
     health,
     git,
+    lastActivity,
   }
 }
 

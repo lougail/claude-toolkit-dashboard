@@ -103,6 +103,7 @@ export interface ProjectHealth {
   hasSteering: boolean
   hasTests: boolean
   hasCI: boolean
+  hasAudit: boolean
   score: number // 0-100
   label: 'healthy' | 'partial' | 'minimal'
 }
@@ -131,6 +132,7 @@ export interface Project {
   features: Feature[]
   health: ProjectHealth
   git: GitInfo
+  lastActivity: number | null // epoch ms from latest git commit
 }
 
 // --- Ralph session tracking ---

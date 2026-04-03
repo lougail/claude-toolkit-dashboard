@@ -66,10 +66,10 @@ export default async function OverviewPage() {
     ? await parseSteering(firstProject.path)
     : []
 
-  // Only show projects with recent activity or toolkit config
-  const activeProjects = projects.filter(
-    (p) => p.recentSessions.length > 0 || p.health.score > 0
-  )
+  // Only show projects with recent activity or toolkit config, sorted by last activity
+  const activeProjects = projects
+    .filter((p) => p.recentSessions.length > 0 || p.health.score > 0)
+    .sort((a, b) => (b.lastActivity ?? 0) - (a.lastActivity ?? 0))
 
   // Count features per v2 status across all projects
   const statusCounts: Record<string, number> = {}
@@ -304,9 +304,16 @@ export default async function OverviewPage() {
                   )}
                   <CIBadge status={project.git.ciStatus} />
                 </div>
-                <p className="text-[11px] text-zinc-600 mt-0.5 font-mono truncate">
-                  {project.path}
-                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-[11px] text-zinc-600 font-mono truncate">
+                    {project.path}
+                  </p>
+                  {project.lastActivity && (
+                    <span className="text-[10px] text-zinc-500 shrink-0">
+                      {formatRelativeTime(project.lastActivity)}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-3 mt-2">
                   <span className="text-[11px] text-zinc-500">
                     {project.features.length} features
@@ -332,6 +339,7 @@ export default async function OverviewPage() {
                     { label: 'steering', ok: project.health.hasSteering },
                     { label: 'tests', ok: project.health.hasTests },
                     { label: 'CI', ok: project.health.hasCI },
+                    { label: 'audit', ok: project.health.hasAudit },
                   ].map(({ label, ok }) => (
                     <span
                       key={label}

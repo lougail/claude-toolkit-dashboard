@@ -23,13 +23,15 @@
   - Extended Feature.status to 6 phases with legacy mapping
   - 6-column responsive layout with icons and horizontal scroll
 
-- [~] **US-001: Enhance Mission Control** (Loop 2 — partial)
+- [x] **US-001: Enhance Mission Control** (Loops 2-9)
   - [x] Added GitInfo type (branch + dirtyCount) to Project
   - [x] getGitInfo() via execFile('git') with 3s timeout
   - [x] Project cards show branch name + dirty file count
   - [x] CI status indicator (.github/workflows detection + gh run status)
   - [x] PR count per project (gh pr list with graceful fallback)
-  - [ ] Improve health score with more granular checks
+  - [x] Granular health score: 6 weighted checks (state, vault, steering, tests×2, CI×1-2, audit)
+  - [x] lastActivity from git log for project sorting
+  - [x] Projects sorted by most recent activity
 
 - [~] **US-003: Cost estimation & period selector** (Loop 3 — partial)
   - [x] estimateCost() + formatCost() with Opus pricing ($15/M in, $75/M out)
@@ -73,6 +75,7 @@
 - [x] US-001: CI status indicator (Loop 6)
 - [x] US-001: PR count per project (Loop 7)
 - [x] US-003: Sparklines in sidebar (Loop 8)
+- [x] US-001: Granular weighted health score + lastActivity sorting (Loop 9)
 
 ## Notes
 
