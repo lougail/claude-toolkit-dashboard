@@ -25,9 +25,9 @@ export function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-56 border-r border-white/[0.06] bg-zinc-950 flex flex-col">
       <div className="px-5 py-5">
-        <h1 className="text-sm font-semibold tracking-tight text-zinc-100">
+        <p className="text-sm font-semibold tracking-tight text-zinc-100">
           Claude Toolkit
-        </h1>
+        </p>
         <p className="text-[11px] text-zinc-500 mt-0.5">Dashboard</p>
       </div>
 
@@ -38,8 +38,9 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
+              aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors',
+                'flex items-center gap-2.5 rounded-md px-2.5 py-2.5 text-[13px] transition-colors',
                 active
                   ? 'bg-white/[0.08] text-zinc-100 font-medium'
                   : 'text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-200'
@@ -53,7 +54,7 @@ export function Sidebar() {
       </nav>
 
       <div className="px-5 py-4 border-t border-white/[0.06]">
-        <p className="text-[11px] text-zinc-600">v0.1.0</p>
+        <p className="text-[11px] text-zinc-500">v0.1.0</p>
       </div>
     </aside>
   )

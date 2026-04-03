@@ -1,20 +1,17 @@
+import { Zap, Clock, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { TokenUsageChart } from '@/components/charts/token-usage-chart'
-import {
-  collectAgentMessages,
-  discoverProjects,
-} from '@/lib/data/scanner'
-import { parseHistory } from '@/lib/parsers/jsonl'
-import { aggregateTokenUsage } from '@/lib/parsers/jsonl'
+import { MetricCard } from '@/components/dashboard/metric-card'
+import { collectAgentMessages } from '@/lib/data/scanner'
+import { parseHistory, aggregateTokenUsage } from '@/lib/parsers/jsonl'
 import { HISTORY_FILE } from '@/lib/config'
-import { formatRelativeTime, formatTokenCount } from '@/lib/utils'
+import { formatTokenCount } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ActivityPage() {
-  const [sessions, agentMessages, projects] = await Promise.all([
+  const [sessions, agentMessages] = await Promise.all([
     parseHistory(HISTORY_FILE),
     collectAgentMessages(30),
-    discoverProjects(),
   ])
 
   const tokenUsage = aggregateTokenUsage(agentMessages)
@@ -33,10 +30,10 @@ export default async function ActivityPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
 
-  // Sessions per day (last 14 days)
-  const now = Date.now()
+  // Sessions per day (last 14 days) — use latest session timestamp as reference
   const fourteenDays = 14 * 24 * 60 * 60 * 1000
-  const recentSessions = sessions.filter((s) => now - s.timestamp < fourteenDays)
+  const latestTimestamp = sessions[0]?.timestamp ?? 0
+  const recentSessions = sessions.filter((s) => latestTimestamp - s.timestamp < fourteenDays)
   const sessionsByDay = new Map<string, number>()
   for (const session of recentSessions) {
     const day = new Date(session.timestamp).toISOString().slice(0, 10)
@@ -54,42 +51,30 @@ export default async function ActivityPage() {
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-8">
-        <div className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4">
-          <p className="text-[11px] uppercase tracking-wider text-zinc-500">
-            Total Sessions
-          </p>
-          <p className="mt-1 text-2xl font-semibold text-zinc-100">
-            {sessions.length}
-          </p>
-        </div>
-        <div className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4">
-          <p className="text-[11px] uppercase tracking-wider text-zinc-500">
-            Last 14 days
-          </p>
-          <p className="mt-1 text-2xl font-semibold text-zinc-100">
-            {recentSessions.length}
-          </p>
-        </div>
-        <div className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4">
-          <p className="text-[11px] uppercase tracking-wider text-zinc-500">
-            Input Tokens (30d)
-          </p>
-          <p className="mt-1 text-2xl font-semibold text-blue-400">
-            {formatTokenCount(totalInput)}
-          </p>
-        </div>
-        <div className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4">
-          <p className="text-[11px] uppercase tracking-wider text-zinc-500">
-            Output Tokens (30d)
-          </p>
-          <p className="mt-1 text-2xl font-semibold text-purple-400">
-            {formatTokenCount(totalOutput)}
-          </p>
-        </div>
+        <MetricCard
+          label="Total Sessions"
+          value={sessions.length}
+          icon={Clock}
+        />
+        <MetricCard
+          label="Last 14 days"
+          value={recentSessions.length}
+          icon={Zap}
+        />
+        <MetricCard
+          label="Input Tokens (30d)"
+          value={formatTokenCount(totalInput)}
+          icon={ArrowUpRight}
+        />
+        <MetricCard
+          label="Output Tokens (30d)"
+          value={formatTokenCount(totalOutput)}
+          icon={ArrowDownRight}
+        />
       </div>
 
       {/* Token usage chart */}
-      <section className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4 mb-6">
+      <section className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4 mb-6" aria-label="Token usage over time">
         <h2 className="text-sm font-medium text-zinc-300 mb-4">
           Token Usage Over Time
         </h2>
@@ -98,7 +83,7 @@ export default async function ActivityPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Sessions per project */}
-        <section className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4">
+        <section className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4" aria-label="Sessions by project">
           <h2 className="text-sm font-medium text-zinc-300 mb-4">
             Sessions by Project
           </h2>
@@ -133,7 +118,7 @@ export default async function ActivityPage() {
         </section>
 
         {/* Daily sessions (last 14 days) */}
-        <section className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4">
+        <section className="rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4" aria-label="Daily sessions last 14 days">
           <h2 className="text-sm font-medium text-zinc-300 mb-4">
             Daily Sessions (14 days)
           </h2>

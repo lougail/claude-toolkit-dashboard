@@ -63,7 +63,7 @@ function VaultCard({ entry, projectName }: { entry: VaultEntry; projectName: str
             {entry.date && (
               <>
                 <span className="text-zinc-700">·</span>
-                <span className="text-[11px] text-zinc-600">{entry.date}</span>
+                <span className="text-[11px] text-zinc-500">{entry.date}</span>
               </>
             )}
           </div>

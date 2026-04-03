@@ -124,7 +124,7 @@ export default async function OverviewPage() {
             <FileText className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
             Steering Docs
             {firstProject && (
-              <span className="text-zinc-600 font-normal ml-2">({firstProject.name})</span>
+              <span className="text-zinc-500 font-normal ml-2">({firstProject.name})</span>
             )}
           </h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -150,7 +150,7 @@ export default async function OverviewPage() {
                   <p className="text-[11px] text-zinc-500 mt-1 truncate">{doc.title}</p>
                 )}
                 {!doc.exists && (
-                  <p className="text-[11px] text-zinc-600 mt-1">Not configured</p>
+                  <p className="text-[11px] text-zinc-500 mt-1">Not configured</p>
                 )}
               </div>
             ))}
@@ -188,7 +188,7 @@ export default async function OverviewPage() {
                       {session.display?.slice(0, 80) ?? 'No description'}
                     </span>
                   </div>
-                  <span className="text-[11px] text-zinc-600 shrink-0 ml-4">
+                  <span className="text-[11px] text-zinc-500 shrink-0 ml-4">
                     {formatRelativeTime(session.timestamp)}
                   </span>
                 </div>
@@ -232,7 +232,7 @@ export default async function OverviewPage() {
                     {project.health.score}%
                   </span>
                 </div>
-                <p className="text-[11px] text-zinc-600 mt-0.5 font-mono truncate">
+                <p className="text-[11px] text-zinc-500 mt-0.5 font-mono truncate">
                   {project.path}
                 </p>
                 <div className="flex items-center gap-3 mt-2">

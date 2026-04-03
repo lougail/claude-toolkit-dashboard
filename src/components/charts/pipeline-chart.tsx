@@ -31,8 +31,9 @@ export function PipelineChart({ data }: PipelineChartProps) {
   }
 
   return (
+    <div role="img" aria-label="Feature pipeline distribution">
     <ResponsiveContainer width="100%" height={200}>
-      <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} aria-label="Feature pipeline bar chart">
+      <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
         <XAxis
           dataKey="status"
@@ -62,5 +63,6 @@ export function PipelineChart({ data }: PipelineChartProps) {
         </Bar>
       </BarChart>
     </ResponsiveContainer>
+    </div>
   )
 }

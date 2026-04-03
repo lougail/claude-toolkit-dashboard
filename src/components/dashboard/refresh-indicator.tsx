@@ -11,7 +11,12 @@ interface RefreshIndicatorProps {
 export function RefreshIndicator({ intervalMs = 30_000 }: RefreshIndicatorProps) {
   const router = useRouter()
   const [secondsAgo, setSecondsAgo] = useState(0)
-  const lastRefreshRef = useRef(Date.now())
+  const lastRefreshRef = useRef(0)
+
+  // Initialize ref on mount to avoid Date.now() in render
+  useEffect(() => {
+    lastRefreshRef.current = Date.now()
+  }, [])
 
   // Refresh interval — depends only on intervalMs/router
   useEffect(() => {
@@ -32,7 +37,7 @@ export function RefreshIndicator({ intervalMs = 30_000 }: RefreshIndicatorProps)
   }, [])
 
   return (
-    <div className="flex items-center gap-1.5 text-[11px] text-zinc-600" aria-live="polite">
+    <div className="flex items-center gap-1.5 text-[11px] text-zinc-500" aria-live="polite">
       <RefreshCw className="h-3 w-3" aria-hidden="true" />
       <span>
         {secondsAgo < 2 ? 'à l\'instant' : `il y a ${secondsAgo}s`}

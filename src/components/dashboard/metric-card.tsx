@@ -22,7 +22,7 @@ export function MetricCard({
         <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
           {label}
         </p>
-        <Icon className="h-4 w-4 text-zinc-600" />
+        <Icon className="h-4 w-4 text-zinc-500" aria-hidden="true" />
       </div>
       <p className="mt-2 text-2xl font-semibold text-zinc-100">{value}</p>
       {subtitle && (

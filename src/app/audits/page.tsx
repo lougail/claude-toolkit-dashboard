@@ -73,7 +73,7 @@ export default async function AuditsPage() {
               )}
 
               {/* Date */}
-              <span className="text-[11px] text-zinc-600 shrink-0">
+              <span className="text-[11px] text-zinc-500 shrink-0">
                 {audit.date}
               </span>
             </div>

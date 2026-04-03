@@ -72,7 +72,7 @@ function FeatureCard({ feature, projectName }: { feature: Feature; projectName: 
       )}
 
       {feature.prd && (
-        <p className="mt-1.5 text-[11px] text-zinc-600 font-mono truncate">
+        <p className="mt-1.5 text-[11px] text-zinc-500 font-mono truncate">
           {feature.prd}
         </p>
       )}
@@ -134,7 +134,7 @@ export default async function PipelinePage() {
                     >
                       {config.label}
                     </span>
-                    <span className="text-[11px] text-zinc-600">
+                    <span className="text-[11px] text-zinc-500">
                       {features.length}
                     </span>
                   </div>
