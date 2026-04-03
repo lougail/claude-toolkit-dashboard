@@ -31,6 +31,11 @@ export default async function OverviewPage() {
     ? await parseSteering(firstProject.path)
     : []
 
+  // Only show projects with recent activity or toolkit config
+  const activeProjects = projects.filter(
+    (p) => p.recentSessions.length > 0 || p.health.score > 0
+  )
+
   const pipelineData = [
     {
       status: 'planning',
@@ -198,9 +203,16 @@ export default async function OverviewPage() {
         )}
       </section>
 
-      {/* Projects list with health */}
+      {/* Projects list with health — only show active projects */}
       <section className="mt-6 rounded-lg border border-white/[0.06] bg-zinc-900/50 p-4" aria-label="Projects list">
-        <h2 className="text-sm font-medium text-zinc-300 mb-4">Projects</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-medium text-zinc-300">Projects</h2>
+          {projects.length > 0 && (
+            <span className="text-[11px] text-zinc-500">
+              {activeProjects.length} actifs / {projects.length} total
+            </span>
+          )}
+        </div>
         {projects.length === 0 ? (
           <EmptyState
             icon={AlertCircle}
@@ -210,7 +222,7 @@ export default async function OverviewPage() {
           />
         ) : (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {projects.map((project) => (
+            {activeProjects.map((project) => (
               <div
                 key={project.encodedPath}
                 className="rounded-md border border-white/[0.04] bg-zinc-900/30 px-4 py-3"
