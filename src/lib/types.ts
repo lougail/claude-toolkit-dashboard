@@ -102,15 +102,20 @@ export interface ProjectHealth {
   hasVault: boolean
   hasSteering: boolean
   hasTests: boolean
+  hasCI: boolean
   score: number // 0-100
   label: 'healthy' | 'partial' | 'minimal'
 }
 
 // --- Git info (live from filesystem) ---
 
+/** CI status detected from .github/workflows + gh CLI */
+export type CIStatus = 'passing' | 'failing' | 'pending' | 'configured' | 'none'
+
 export interface GitInfo {
   branch: string | null
   dirtyCount: number
+  ciStatus: CIStatus
 }
 
 // --- Aggregated project data ---

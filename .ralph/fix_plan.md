@@ -27,7 +27,7 @@
   - [x] Added GitInfo type (branch + dirtyCount) to Project
   - [x] getGitInfo() via execFile('git') with 3s timeout
   - [x] Project cards show branch name + dirty file count
-  - [ ] CI status indicator (read from state.json or .github)
+  - [x] CI status indicator (.github/workflows detection + gh run status)
   - [ ] PR count per project
   - [ ] Improve health score with more granular checks
 
@@ -47,10 +47,12 @@
   - [x] Integrated into Overview page (shows active sessions with progress bars)
   - [x] Live log display for running sessions
 
-- [ ] **US-006: Multi-project configuration**
-  - config.json schema and reader
-  - Auto-scan ~/Developer/ with include/exclude patterns
-  - Settings page UI
+- [x] **US-006: Multi-project configuration** (Loop 5)
+  - [x] DashboardConfig type (projectDirs, excludePatterns, scanClaudeProjects)
+  - [x] Config reader/writer persisted to ~/.claude/dashboard/config.json
+  - [x] discoverProjects() scans configured dirs for git repos (one level deep)
+  - [x] API route GET/PUT /api/config
+  - [x] Settings page with directory list, exclude patterns, scan toggle
 
 ## Low Priority
 
@@ -67,6 +69,7 @@
 - [x] US-001: Git branch + dirty count in project cards (Loop 2)
 - [x] US-003: Cost estimation + period selector on Activity page (Loop 3)
 - [x] US-004: Ralph real-time tracking with SSE (Loop 4)
+- [x] US-006: Multi-project config + Settings page (Loop 5)
 
 ## Notes
 

@@ -16,6 +16,7 @@ import type {
   Project,
   ProjectHealth,
   GitInfo,
+  CIStatus,
   DashboardMetrics,
   SessionEntry,
   AgentMessage,
@@ -49,15 +50,61 @@ function execGit(args: string[], cwd: string): Promise<string> {
   })
 }
 
+/**
+ * Detect CI status for a project:
+ * 1. Check if .github/workflows/ has yml/yaml files
+ * 2. If yes, try `gh run list` for actual status (with timeout)
+ * 3. Gracefully fall back to 'configured' if gh is unavailable
+ */
+async function getCIStatus(projectPath: string): Promise<CIStatus> {
+  const workflowsDir = join(projectPath, '.github', 'workflows')
+  if (!(await exists(workflowsDir))) return 'none'
+
+  let hasWorkflows = false
+  try {
+    const files = await readdir(workflowsDir)
+    hasWorkflows = files.some((f) => f.endsWith('.yml') || f.endsWith('.yaml'))
+  } catch {
+    return 'none'
+  }
+  if (!hasWorkflows) return 'none'
+
+  // Try gh CLI for actual run status (best-effort, 3s timeout)
+  const ghResult = await new Promise<string>((resolve) => {
+    execFile(
+      'gh',
+      ['run', 'list', '--limit', '1', '--json', 'conclusion,status', '--branch', 'main'],
+      { cwd: projectPath, timeout: 3000 },
+      (err, stdout) => resolve(err ? '' : stdout.trim()),
+    )
+  })
+
+  if (!ghResult) return 'configured'
+
+  try {
+    const runs: Array<{ conclusion: string; status: string }> = JSON.parse(ghResult)
+    if (runs.length === 0) return 'configured'
+    const run = runs[0]
+    if (run.status === 'in_progress' || run.status === 'queued') return 'pending'
+    if (run.conclusion === 'success') return 'passing'
+    if (run.conclusion === 'failure') return 'failing'
+    return 'configured'
+  } catch {
+    return 'configured'
+  }
+}
+
 async function getGitInfo(projectPath: string): Promise<GitInfo> {
-  const [branch, statusOutput] = await Promise.all([
+  const [branch, statusOutput, ciStatus] = await Promise.all([
     execGit(['rev-parse', '--abbrev-ref', 'HEAD'], projectPath),
     execGit(['status', '--porcelain', '--untracked-files=no'], projectPath),
+    getCIStatus(projectPath),
   ])
 
   return {
     branch: branch || null,
     dirtyCount: statusOutput ? statusOutput.split('\n').length : 0,
+    ciStatus,
   }
 }
 
@@ -71,7 +118,7 @@ async function buildProject(decodedPath: string, encodedPath: string): Promise<P
   const [state, vaultEntries, git] = await Promise.all([
     projectExists ? parseState(decodedPath) : Promise.resolve(null),
     projectExists ? parseVault(join(decodedPath, 'vault')) : Promise.resolve([]),
-    projectExists ? getGitInfo(decodedPath) : Promise.resolve({ branch: null, dirtyCount: 0 }),
+    projectExists ? getGitInfo(decodedPath) : Promise.resolve({ branch: null, dirtyCount: 0, ciStatus: 'none' as const }),
   ])
 
   const hasState = state !== null
@@ -83,13 +130,15 @@ async function buildProject(decodedPath: string, encodedPath: string): Promise<P
     await exists(join(decodedPath, 'jest.config.js'))
   )
 
-  const checks = [hasState, hasVault, hasSteering, hasTests]
+  const hasCI = git.ciStatus !== 'none'
+  const checks = [hasState, hasVault, hasSteering, hasTests, hasCI]
   const healthScore = Math.round((checks.filter(Boolean).length / checks.length) * 100)
   const health: ProjectHealth = {
     hasState,
     hasVault,
     hasSteering,
     hasTests,
+    hasCI,
     score: healthScore,
     label: healthScore >= 75 ? 'healthy' : healthScore >= 50 ? 'partial' : 'minimal',
   }

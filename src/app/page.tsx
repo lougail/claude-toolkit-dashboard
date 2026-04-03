@@ -10,7 +10,10 @@ import {
   CheckCircle,
   Circle,
   FileDiff,
+  CircleDot,
+  Loader2,
 } from 'lucide-react'
+import type { CIStatus } from '@/lib/types'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { TokenUsageChart } from '@/components/charts/token-usage-chart'
 import { PipelineChart } from '@/components/charts/pipeline-chart'
@@ -21,6 +24,31 @@ import { getDashboardMetrics, discoverProjects } from '@/lib/data/scanner'
 import { parseSteering } from '@/lib/parsers/steering'
 import { discoverRalphSessions } from '@/lib/parsers/ralph'
 import { formatRelativeTime, cn } from '@/lib/utils'
+
+const CI_DISPLAY: Record<CIStatus, { label: string; color: string; icon: 'check' | 'alert' | 'dot' | 'loader' | null }> = {
+  passing:    { label: 'CI passing',    color: 'text-emerald-400', icon: 'check' },
+  failing:    { label: 'CI failing',    color: 'text-red-400',     icon: 'alert' },
+  pending:    { label: 'CI running',    color: 'text-amber-400',   icon: 'loader' },
+  configured: { label: 'CI configured', color: 'text-zinc-400',    icon: 'dot' },
+  none:       { label: '',              color: '',                  icon: null },
+}
+
+function CIBadge({ status }: { status: CIStatus }) {
+  const display = CI_DISPLAY[status]
+  if (!display.icon) return null
+
+  const Icon = display.icon === 'check' ? CheckCircle
+    : display.icon === 'alert' ? AlertCircle
+    : display.icon === 'loader' ? Loader2
+    : CircleDot
+
+  return (
+    <span className={cn('inline-flex items-center gap-1 text-[11px]', display.color)}>
+      <Icon className={cn('size-3 shrink-0', display.icon === 'loader' && 'animate-spin')} aria-hidden="true" />
+      {display.label}
+    </span>
+  )
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -273,6 +301,7 @@ export default async function OverviewPage() {
                       {project.git.dirtyCount} dirty
                     </span>
                   )}
+                  <CIBadge status={project.git.ciStatus} />
                 </div>
                 <p className="text-[11px] text-zinc-600 mt-0.5 font-mono truncate">
                   {project.path}
@@ -295,6 +324,7 @@ export default async function OverviewPage() {
                     { label: 'vault', ok: project.health.hasVault },
                     { label: 'steering', ok: project.health.hasSteering },
                     { label: 'tests', ok: project.health.hasTests },
+                    { label: 'CI', ok: project.health.hasCI },
                   ].map(({ label, ok }) => (
                     <span
                       key={label}
