@@ -6,10 +6,10 @@
 
 ## Où en est le projet (2026-11-22)
 
-- **Fait.** Le dashboard construit en avril 2026 pour la V4 du toolkit. Ses six pages lisent `.claude/state.json`, `vault/`, les sessions de Claude Code, git et `gh`. La correction d'une date mal lue est enregistrée (tâche 1).
+- **Fait.** Le dashboard construit en avril 2026 pour la V4 du toolkit. Ses six pages lisent `.claude/state.json`, `vault/`, les sessions de Claude Code, git et `gh`. La correction d'une date mal lue est enregistrée (tâche 1). Le lecteur du dossier est écrit et testé sur les vrais dossiers du projet pilote et de ce dépôt (tâche 2).
 - **Constaté.** Lancé le 22 novembre sur les vraies données de Louis. Overview, Decisions, Audits, Activity et Settings répondent sans erreur. Pipeline renvoie une erreur 500, car les anciens `state.json` n'ont pas le champ `ralph`. Activity affiche 0 token, car elle lit seulement les fichiers des sous-agents. Ces deux défauts restent jusqu'à la tâche 7.
 - **Périmé.** Pipeline, Audits et la lecture de `state.json` affichent ce qu'écrivaient les commandes de la V4 (`/prd`, `/ralph`, `/audit`), retirées par la refonte du toolkit. Les trois `state.json` qui restent datent de mai à août.
-- **En cours.** La tâche 2. Un sous-agent Opus 5.5 écrit le lecteur du dossier d'après `tasks/brief-lecteur-dossier.md`, sur la branche `codex/dossier-reader`. L'agent principal contrôle son travail avant de l'enregistrer.
+- **En cours.** L'essai du format sur le projet pilote court jusqu'au 29 novembre (tâche 4). Le lecteur est enregistré sur la branche `codex/dossier-reader`, qui attend l'accord de Louis pour partir sur GitHub.
 
 ## Direction
 
@@ -24,7 +24,7 @@ Le dashboard vaut ce que valent ces fichiers. Leur format se fixe donc avant les
 | # | Tâche | Fini quand | État |
 |---|---|---|---|
 | 1 | **Enregistrer la correction de la date.** | `git status` ne liste plus `markdown.ts` ni `parsers.test.ts`, et `pnpm exec vitest run src/__tests__/parsers.test.ts` passe. | fait le 22 novembre, commit `a9f228a` |
-| 2 | **Lire le dossier d'un projet.** Une fonction lit `PLAN.md`, `JOURNAL.md` et les décisions d'un projet. Chaque fichier peut manquer ou être abîmé sans empêcher la lecture des autres, et la fonction signale ce qu'elle n'a pas pu lire. Le brief est dans `tasks/brief-lecteur-dossier.md`. | Les tests du lecteur passent. Sur le dossier du projet pilote tel qu'il est le 22 novembre, il rend la date de l'état, cinq tâches, quatre lignes en attente, cinq séances et cinq décisions. Sur la version du même plan dont un titre porte son ancien nom, il signale le titre manquant. | en cours |
+| 2 | **Lire le dossier d'un projet.** Une fonction lit `PLAN.md`, `JOURNAL.md` et les décisions d'un projet. Chaque fichier peut manquer ou être abîmé sans empêcher la lecture des autres, et la fonction signale ce qu'elle n'a pas pu lire. Le brief est dans `tasks/brief-lecteur-dossier.md`. | Les tests du lecteur passent. Sur le dossier du projet pilote tel qu'il est le 22 novembre, il rend la date de l'état, cinq tâches, quatre lignes en attente, cinq séances et cinq décisions. Sur la version du même plan dont un titre porte son ancien nom, il signale le titre manquant. | fait le 22 novembre, commit `84821e8` |
 | 3 | **Brancher le lecteur sur la liste des projets.** La découverte des projets qui existe déjà (`src/lib/data/scanner.ts`) joint à chaque projet son dossier lu. | Sur la machine de Louis, le projet pilote et ce dépôt sortent avec leur dossier, et un projet sans `PLAN.md` sort avec ce manque signalé. | à faire |
 | 4 | **Laisser finir l'essai sur le projet pilote.** Le format de `PLAN.md` y est à l'essai jusqu'au 29 novembre. Le projet `.claude` tient le relevé dans `~/.claude/vault/ideas/essai-piece-1-*.md`. | Le relevé final du 29 novembre est écrit. | en cours |
 | 5 | **Fixer le format du dossier et son contrôle**, dans le projet `.claude`. Des titres fixes, une liste fermée d'états, une date et un nom sur chaque ligne en attente, le numéro de la tâche dans le journal et les commits, une preuve sur chaque tâche finie. Une commande lit le dossier d'un projet et signale ce qui manque ou ce qui est périmé. | La commande passe sur le projet pilote et échoue sur une copie dont un titre est renommé. Le lecteur de la tâche 2 est ajusté au format fixé. | à faire |
@@ -44,4 +44,6 @@ Un lecteur d'essai de 46 lignes a lu le dossier du projet pilote. Il en sort la 
 
 ## Ce qui attend Louis
 
-Rien pendant la tâche 2. L'agent principal rend compte quand le lecteur est contrôlé et enregistré.
+L'agent propose la première ligne, attend la réponse, puis passe à la suivante.
+
+1. Dire « pousse » pour publier la branche `codex/dossier-reader` sur GitHub et ouvrir la PR de la tâche 2. Le dépôt est public, et l'accord donné le 22 novembre couvrait le lancement de l'agent, le contrôle de son travail et l'enregistrement dans git. Demandé le 22 novembre, la réponse attendue est « pousse ».

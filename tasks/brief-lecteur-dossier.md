@@ -1,6 +1,6 @@
 # Brief — Lire le dossier d'un projet
 
-> **Statut :** prêt à lancer
+> **Statut :** livré le 22 novembre 2026, commit `84821e8` sur la branche `codex/dossier-reader`
 > **Date :** 2026-11-22
 > **Tâche du plan :** 2, dans `PLAN.md`
 > **Décision :** `vault/decisions/2026-11-22-dashboard-poste-de-pilotage.md`
@@ -254,3 +254,14 @@ Les quatre commandes passent, et `pnpm exec vitest run` compte toujours les 40 t
 ## Après ce morceau
 
 La tâche 3 du plan branche le lecteur sur la liste des projets (`src/lib/data/scanner.ts`) et la tâche 7 construit les trois écrans. Les liens avec les commits, le contrôle de la fraîcheur du dossier et la commande de contrôle du format appartiennent à ces tâches ou au projet `.claude`. Les pages, `scanner.ts` et `package.json` restent donc tels quels dans ce morceau.
+
+## Livré le 22 novembre
+
+Le lecteur est dans le commit `84821e8`. Il s'écarte de ce brief sur quatre points.
+
+- Quatre sortes de manques s'ajoutent à la liste. Ce sont `empty_file`, `point_without_label`, `unreadable_frontmatter` et `no_decision_entry`.
+- Les lignes placées dans un bloc de code clôturé sont ignorées par toute la lecture.
+- À date égale, les fichiers de `docs/decisions` et de `vault/decisions` sortent du nom le plus élevé au plus bas.
+- Un dossier de projet qui n'existe pas donne deux manques `missing_file`, un pour le plan et un pour le journal.
+
+Trois limites sont connues. Seul le premier tableau de la section des tâches est lu. Une section en double ou un numéro de tâche en double passe sans manque. Un bloc de code jamais fermé fait ignorer la fin du fichier sans manque.
