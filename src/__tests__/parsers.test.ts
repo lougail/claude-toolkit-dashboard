@@ -347,6 +347,16 @@ We decided to use JWT because...`
     expect(entries[0]!.title).toBe('note')
     expect(entries[0]!.type).toBe('journal')
   })
+
+  it('keeps an unquoted YAML date as a YYYY-MM-DD string', async () => {
+    const vaultDir = join(TEST_DIR, 'vault4')
+    await mkdir(join(vaultDir, 'research'), { recursive: true })
+    await writeFile(join(vaultDir, 'research', 'sketch.md'), '---\ndate: 2026-06-19\n---\nContent')
+    await writeFile(join(vaultDir, 'research', 'other.md'), '---\ndate: "2026-06-20"\n---\nContent')
+
+    const entries = await parseVault(vaultDir)
+    expect(entries.map((e) => e.date)).toEqual(['2026-06-20', '2026-06-19'])
+  })
 })
 
 // --- ralph.ts ---

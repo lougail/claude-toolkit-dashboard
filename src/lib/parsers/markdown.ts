@@ -12,8 +12,10 @@ async function parseMarkdownFile(filePath: string): Promise<VaultEntry | null> {
     const { data, content } = matter(raw)
 
     // Extract date from frontmatter or filename (YYYY-MM-DD-slug.md pattern)
+    // gray-matter turns an unquoted YAML date (date: 2026-06-19) into a Date object
     const filenameMatch = basename(filePath).match(/^(\d{4}-\d{2}-\d{2})/)
-    const date = data.date ?? filenameMatch?.[1] ?? ''
+    const rawDate: unknown = data.date ?? filenameMatch?.[1] ?? ''
+    const date = rawDate instanceof Date ? rawDate.toISOString().slice(0, 10) : String(rawDate)
 
     // Infer type from parent directory name
     const parentDir = filePath.split('/').at(-2) ?? ''
