@@ -60,3 +60,4 @@ tsconfig.tsbuildinfo
 .ralph/progress.json
 .ralph/live.log
 .ralphrc
+.claude-context.md
