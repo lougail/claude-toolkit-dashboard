@@ -1,6 +1,6 @@
 # Brief — Joindre le dossier à la liste des projets
 
-> **Statut :** prêt à lancer
+> **Statut :** livré le 23 novembre 2026, commit `f3c2164` sur la branche `codex/dossier-reader`
 > **Date :** 2026-11-23
 > **Tâche du plan :** 3, dans `PLAN.md`
 > **Décision :** `vault/decisions/2026-11-22-dashboard-poste-de-pilotage.md`
@@ -66,3 +66,16 @@ Un essai sur la vraie machine s'y ajoute. Un fichier de test temporaire appelle 
 ## Après ce morceau
 
 Le 23 novembre, `discoverProjects` rend 103 entrées sur la machine de Louis. Beaucoup pointent vers des répertoires disparus, et un même projet peut sortir deux fois. Le tri de cette liste appartient à la tâche 7, avec les trois écrans.
+
+## Livré le 23 novembre
+
+Le branchement est dans le commit `f3c2164`. `buildProject` appelle `readDossier` pour chaque projet, que son répertoire existe ou qu'il ait disparu, et chaque projet de la liste porte un `Dossier`.
+
+- **Tests.** `pnpm exec vitest run` compte 136 tests dans 4 fichiers, dont les 13 de `scanner.test.ts`. `tsc` et ESLint passent. Une lecture faite au mauvais chemin fait échouer 5 de ces 13 tests.
+- **Essai sur la vraie machine.** Au contrôle final, `discoverProjects` rend 88 entrées en 4 à 5 secondes, et la lecture de tous les dossiers y compte pour moins d'un dixième de seconde. Deux entrées ont un plan, ce dépôt et le projet pilote, et leur dossier est celui que rend un appel direct à `readDossier`. Dix répertoires présents n'ont pas de `PLAN.md` et portent le manque `missing_file`. Les 76 entrées dont le répertoire a disparu portent ce manque pour le plan et pour le journal. Le premier essai du matin comptait 103 entrées, et `~/.claude/projects` a changé entre les deux.
+- **Correction ajoutée.** Appelé sans option, gray-matter garde un texte en cache avant de le lire, et la deuxième lecture d'un frontmatter invalide sortait du cache sans erreur. Le lecteur du dossier perdait alors le manque `unreadable_frontmatter` après le premier chargement (commit `c0da1f6`). Les lecteurs du vault et des steering docs avaient le même défaut (commit `4b3b37d`). Le piège est noté dans `vault/insights/2026-11-23-gray-matter-cache.md`.
+
+Deux points restent ouverts pour la tâche 7.
+
+- `decodeProjectPath` rend `//` pour un répertoire caché comme `.claude`. Deux des 88 entrées ont ce chemin faux. Leur dossier est cherché à cet endroit, et `dossier.projectPath` y diffère de `path`.
+- Les tests passent par `~/.claude/projects`. La découverte par les répertoires configurés (`scanConfiguredDirs`) est couverte par le seul essai sur la vraie machine.
