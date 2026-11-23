@@ -538,7 +538,9 @@ function readFrontmatter(
   gaps: DossierGap[]
 ): { data: Record<string, unknown>; content: string } {
   try {
-    const { data, content } = matter(text)
+    // Called without options, gray-matter caches a text before parsing it. A second read of the
+    // same invalid text would then come back from the cache without throwing, and lose its gap.
+    const { data, content } = matter(text, {})
     return { data, content }
   } catch {
     gaps.push({

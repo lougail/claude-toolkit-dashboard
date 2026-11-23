@@ -746,6 +746,17 @@ describe('readDossier decisions', () => {
     expect(kindsOf(gapsOf(dossier, 'decisions'))).toEqual(['unreadable_frontmatter'])
   })
 
+  it('should report an invalid frontmatter again when the same decision is read a second time', async () => {
+    const projectDir = await createProject({
+      'vault/decisions/relue.md': '---\ntitle: [relue deux fois\n---\n\n# Changer de base\n',
+    })
+    await readDossier(projectDir)
+
+    const dossier = await readDossier(projectDir)
+
+    expect(kindsOf(gapsOf(dossier, 'decisions'))).toEqual(['unreadable_frontmatter'])
+  })
+
   it('should return the decision files of the same date from the highest file name to the lowest', async () => {
     const projectDir = await createProject({
       'docs/decisions/001-liste.md': '# ADR-001 — Afficher la liste\n\n**Date** : 2026-11-22\n',
