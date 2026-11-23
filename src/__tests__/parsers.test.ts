@@ -6,6 +6,7 @@ import { parseState } from '@/lib/parsers/state'
 import { parseHistory, parseAgentMessages, aggregateTokenUsage } from '@/lib/parsers/jsonl'
 import { parseVault } from '@/lib/parsers/markdown'
 import { parseRalphSession } from '@/lib/parsers/ralph'
+import { parseSteering } from '@/lib/parsers/steering'
 
 const TEST_DIR = join(tmpdir(), 'dashboard-test-' + Date.now())
 
@@ -346,6 +347,42 @@ We decided to use JWT because...`
     expect(entries).toHaveLength(1)
     expect(entries[0]!.title).toBe('note')
     expect(entries[0]!.type).toBe('journal')
+  })
+
+  it('keeps an unquoted YAML date as a YYYY-MM-DD string', async () => {
+    const vaultDir = join(TEST_DIR, 'vault4')
+    await mkdir(join(vaultDir, 'research'), { recursive: true })
+    await writeFile(join(vaultDir, 'research', 'sketch.md'), '---\ndate: 2026-06-19\n---\nContent')
+    await writeFile(join(vaultDir, 'research', 'other.md'), '---\ndate: "2026-06-20"\n---\nContent')
+
+    const entries = await parseVault(vaultDir)
+    expect(entries.map((e) => e.date)).toEqual(['2026-06-20', '2026-06-19'])
+  })
+
+  it('should skip an entry with an invalid frontmatter again on a second read', async () => {
+    const vaultDir = join(TEST_DIR, 'vault5')
+    await mkdir(join(vaultDir, 'ideas'), { recursive: true })
+    await writeFile(join(vaultDir, 'ideas', 'broken.md'), '---\ntitle: [vault entry read twice\n---\nContent')
+    await parseVault(vaultDir)
+
+    const entries = await parseVault(vaultDir)
+
+    expect(entries).toEqual([])
+  })
+})
+
+// --- steering.ts ---
+
+describe('parseSteering', () => {
+  it('should report a doc with an invalid frontmatter as unreadable again on a second read', async () => {
+    const projectDir = join(TEST_DIR, 'steering-project')
+    await mkdir(join(projectDir, 'steering'), { recursive: true })
+    await writeFile(join(projectDir, 'steering', 'product.md'), '---\ntitle: [steering doc read twice\n---\n# Product')
+    await parseSteering(projectDir)
+
+    const docs = await parseSteering(projectDir)
+
+    expect(docs.find((doc) => doc.type === 'product')).toMatchObject({ exists: false, content: '' })
   })
 })
 

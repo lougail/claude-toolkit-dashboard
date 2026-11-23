@@ -133,6 +133,8 @@ export interface Project {
   health: ProjectHealth
   git: GitInfo
   lastActivity: number | null // epoch ms from latest git commit
+  /** PLAN.md, JOURNAL.md and decisions, with the gaps when the project directory or a file is missing */
+  dossier: Dossier
 }
 
 // --- Ralph session tracking ---
@@ -188,4 +190,84 @@ export interface DashboardMetrics {
     input: number
     output: number
   }[]
+}
+
+// --- Dossier (PLAN.md, JOURNAL.md and decisions kept by the agents in each project) ---
+
+/** A labelled bullet, written "- **Fait.** text" in the plan state or in a journal entry */
+export interface DossierPoint {
+  label: string
+  text: string
+  taskNumbers: number[]
+}
+
+export type DossierTaskStatus = 'todo' | 'in_progress' | 'to_validate' | 'done' | 'later' | 'unknown'
+
+export interface DossierTask {
+  number: number
+  title: string
+  description: string
+  doneWhen: string
+  status: DossierTaskStatus
+  statusText: string
+}
+
+export interface DossierWaitingItem {
+  position: number
+  text: string
+  requestedOn: string | null
+  taskNumbers: number[]
+}
+
+export interface DossierPlan {
+  stateDate: string | null
+  state: DossierPoint[]
+  tasks: DossierTask[]
+  waiting: DossierWaitingItem[]
+}
+
+export interface DossierJournalEntry {
+  date: string
+  note: string | null
+  points: DossierPoint[]
+}
+
+export interface DossierDecision {
+  id: string | null
+  title: string
+  date: string | null
+  status: string | null
+  path: string
+}
+
+export type DossierGapKind =
+  | 'missing_file'
+  | 'unreadable_file'
+  | 'empty_file'
+  | 'missing_section'
+  | 'missing_state_date'
+  | 'point_without_label'
+  | 'unreadable_tasks_table'
+  | 'unreadable_task_row'
+  | 'task_without_done_when'
+  | 'unknown_status'
+  | 'waiting_without_date'
+  | 'journal_heading_without_date'
+  | 'unreadable_frontmatter'
+  | 'no_decision_entry'
+
+export interface DossierGap {
+  source: 'plan' | 'journal' | 'decisions'
+  kind: DossierGapKind
+  message: string
+}
+
+export interface Dossier {
+  projectPath: string
+  /** null when PLAN.md is absent or unreadable */
+  plan: DossierPlan | null
+  /** null when JOURNAL.md is absent or unreadable */
+  journal: DossierJournalEntry[] | null
+  decisions: DossierDecision[]
+  gaps: DossierGap[]
 }
