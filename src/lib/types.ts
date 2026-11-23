@@ -133,6 +133,8 @@ export interface Project {
   health: ProjectHealth
   git: GitInfo
   lastActivity: number | null // epoch ms from latest git commit
+  /** PLAN.md, JOURNAL.md and decisions, with the gaps when the project directory or a file is missing */
+  dossier: Dossier
 }
 
 // --- Ralph session tracking ---

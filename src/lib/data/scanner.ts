@@ -12,6 +12,7 @@ import {
 import { parseState } from '@/lib/parsers/state'
 import { parseHistory, parseAgentMessages, aggregateTokenUsage } from '@/lib/parsers/jsonl'
 import { parseVault } from '@/lib/parsers/markdown'
+import { readDossier } from '@/lib/parsers/dossier'
 import type {
   Project,
   ProjectHealth,
@@ -133,10 +134,12 @@ async function buildProject(decodedPath: string, encodedPath: string): Promise<P
   const name = projectName(decodedPath)
   const projectExists = await exists(decodedPath)
 
-  const [state, vaultEntries, git] = await Promise.all([
+  // readDossier reports a missing project directory as gaps, so it runs even when the project is gone
+  const [state, vaultEntries, git, dossier] = await Promise.all([
     projectExists ? parseState(decodedPath) : Promise.resolve(null),
     projectExists ? parseVault(join(decodedPath, 'vault')) : Promise.resolve([]),
     projectExists ? getGitInfo(decodedPath) : Promise.resolve({ branch: null, dirtyCount: 0, ciStatus: 'none' as const, openPRs: 0 }),
+    readDossier(decodedPath),
   ])
 
   const hasState = state !== null
@@ -192,6 +195,7 @@ async function buildProject(decodedPath: string, encodedPath: string): Promise<P
     health,
     git,
     lastActivity,
+    dossier,
   }
 }
 
