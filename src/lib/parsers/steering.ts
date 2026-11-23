@@ -35,7 +35,9 @@ export async function parseSteering(projectPath: string): Promise<SteeringDoc[]>
 
     try {
       const raw = await readFile(filePath, 'utf-8')
-      const { data, content } = matter(raw)
+      // Called without options, gray-matter caches a text before parsing it. A second read of the
+      // same invalid frontmatter would then come back from the cache without throwing.
+      const { data, content } = matter(raw, {})
 
       // Extract first heading as title
       const headingMatch = content.match(/^#\s+(.+)/m)
