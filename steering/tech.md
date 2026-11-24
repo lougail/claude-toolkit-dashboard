@@ -1,6 +1,6 @@
 # Tech — claude-toolkit-dashboard
 
-> Derniere mise a jour : 2026-04-02
+> Derniere mise a jour : 2026-11-24
 
 ## Stack
 
@@ -10,7 +10,6 @@
 | **Langage** | TypeScript (strict) | |
 | **UI** | React 19 | |
 | **Styling** | Tailwind CSS 4 | |
-| **Charts** | Recharts 2.x | |
 | **Icons** | Lucide React | |
 | **Hebergement** | {Vercel / VPS / ...} | |
 | **CI/CD** | {GitHub Actions / ...} | |
@@ -32,14 +31,11 @@
 ```
 src/
 ├── app/              # Next.js App Router pages
-│   ├── activity/     # Vue activite
-│   ├── audits/       # Vue audits
-│   ├── decisions/    # Vue decisions
-│   ├── pipeline/     # Vue pipeline
+│   ├── api/config/   # Lecture et ecriture de la configuration
+│   ├── settings/     # Vue configuration
 │   ├── layout.tsx    # Layout principal
-│   └── page.tsx      # Page d'accueil / dashboard
+│   └── page.tsx      # Page d'accueil, liste des projets
 ├── components/       # Composants React
-│   ├── charts/       # Composants de charts (Recharts)
 │   └── dashboard/    # Composants du dashboard
 └── lib/              # Utilitaires, parsers, types
     ├── config.ts

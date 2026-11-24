@@ -1,6 +1,6 @@
 # Structure — claude-toolkit-dashboard
 
-> Derniere mise a jour : 2026-04-02
+> Derniere mise a jour : 2026-11-24
 
 ## Arborescence
 
@@ -45,9 +45,6 @@ claude-toolkit-dashboard/
 
 ### Data fetching
 {A documenter — Server Components, loaders dans lib/data/}
-
-### Charts
-{Recharts — composants wrapper dans components/charts/}
 
 ## Points d'attention
 
