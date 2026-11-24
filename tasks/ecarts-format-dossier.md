@@ -2,7 +2,7 @@
 
 > **Date :** 2026-11-24
 > **Pour :** le projet `.claude`, qui tient le format du dossier et sa commande de contrôle
-> **Versions comparées :** `scripts/check-dossier.py` au commit `8f6ca50` du toolkit, et `src/lib/parsers/dossier.ts` au commit `7064465` de ce dépôt
+> **Versions comparées :** `scripts/check-dossier.py` au commit `8f6ca50` du toolkit, et `src/lib/parsers/dossier.ts` au commit `7064465` de ce dépôt, puis au commit `6d93aaa` pour les fins de ligne et l'écart 11
 
 Le lecteur du dashboard et la commande lisent le même dossier. Ce fichier liste les textes qu'ils lisent différemment, avec les deux lectures et celle que ce dépôt propose. Chaque écart a été rejoué le 24 novembre sur un dossier d'essai.
 
@@ -19,6 +19,7 @@ Sur trois dossiers, le lecteur et la commande rendent le même nombre d'erreurs 
 - **Le dossier d'exemple.** Sa copie est dans `src/__tests__/fixtures/dossier/valid/`, identique au commit `8f6ca50`. Le groupe de tests « readDossier on the valid fixture shared with the check command » la lit sans aucun manque. La copie de travail du toolkit y a ajouté depuis un `AGENTS.md`, absent de cette copie.
 - **Les sections et les colonnes en plus.** Un plan avec les colonnes « Qui » et « Sprint » et une section « Sprint 3 » se lit sans aucun manque, comme dans la commande.
 - **La date de l'état.** Le lecteur la lit maintenant comme la commande, écrite `(AAAA-MM-JJ)` n'importe où dans le titre.
+- **Les fins de ligne.** Le lecteur coupe le texte aux mêmes endroits que `str.splitlines` de Python, dont un retour chariot seul et le séparateur de ligne U+2028. Le dossier d'exemple écrit avec chacune des onze fins de ligne passe des deux côtés.
 - **Le reste du format.** Les titres `# Plan` et `# Journal`, les cinq états, « à valider par », « fait le » suivi de la preuve, une date sans année, un numéro en double, les trois points d'une séance, l'ordre des séances, le plan comparé au journal, `README.md` dans un dossier de décisions, un fichier qui n'est pas en UTF-8 et une décision atteinte par un lien symbolique se lisent de la même façon.
 
 ## Textes lus différemment
@@ -139,6 +140,20 @@ Un répertoire `docs/decisions/x.md/`.
 - **Commande.** Elle le compte comme une décision sans date.
 - **Lecteur.** Il l'ignore.
 - **Proposition.** La commande ignore les répertoires.
+
+### 11. Une clôture de bloc suivie d'un texte
+
+`````markdown
+```bash
+pnpm test
+``` fin
+
+## Prochaines tâches
+`````
+
+- **Commande.** Toute ligne qui commence par une clôture ouvre ou ferme un bloc. Le bloc se ferme sur sa troisième ligne, et le dossier passe.
+- **Lecteur.** Une clôture suivie d'un texte ne ferme pas le bloc, et tout ce qui suit y reste. Il signale que les sections « Prochaines tâches » et « Ce qui attend » manquent.
+- **Proposition.** La commande suit la règle de CommonMark, comme pour l'écart 2. GitHub affiche alors la fin du plan en code, ce qui montre l'oubli à qui relit le fichier.
 
 ## Lecture commune à revoir
 
