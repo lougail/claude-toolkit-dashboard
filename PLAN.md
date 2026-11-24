@@ -5,6 +5,8 @@
 > Le projet pilote est le projet privé de Louis où le format du dossier est à l'essai. Ce dépôt est public, donc le nom et le contenu de ce projet restent hors de ses fichiers et de ses commits. Le nom figure dans le relevé de l'essai, `~/.claude/vault/ideas/essai-piece-1-*.md`.
 >
 > Le format de ce dossier est décrit dans `~/.claude/skills/demarrer/DOSSIER.md`, et `python3 ~/.claude/scripts/check-dossier.py .` le contrôle. Les séances sont dans `JOURNAL.md`.
+>
+> Depuis le 23 novembre, l'agent fusionne lui-même une PR quand ses contrôles passent, puis dit à Louis quand il a fusionné et comment il a vérifié (`vault/decisions/2026-11-23-fusion-par-l-agent.md`). Le robot de revue relit une PR de moins de 150 000 caractères de diff.
 
 ## Où en est le projet (2026-11-24)
 
