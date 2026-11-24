@@ -210,12 +210,20 @@ export interface DossierTask {
   doneWhen: string
   status: DossierTaskStatus
   statusText: string
+  /** The name written after "à valider par", as written. null for another status or without a name */
+  validator: string | null
+  /** The date written after "fait le", as YYYY-MM-DD. null for another status or without a readable date */
+  doneOn: string | null
+  /** The text written after that date, without the punctuation around it. null without a date or without a proof */
+  proof: string | null
 }
 
 export interface DossierWaitingItem {
   position: number
   text: string
   requestedOn: string | null
+  /** Who is expected to answer: the name written after the date, otherwise the name ending the section heading */
+  addressee: string | null
   taskNumbers: number[]
 }
 
@@ -244,6 +252,7 @@ export type DossierGapKind =
   | 'missing_file'
   | 'unreadable_file'
   | 'empty_file'
+  | 'missing_title'
   | 'missing_section'
   | 'missing_state_date'
   | 'point_without_label'
@@ -251,14 +260,30 @@ export type DossierGapKind =
   | 'unreadable_task_row'
   | 'task_without_done_when'
   | 'unknown_status'
+  | 'duplicate_task_number'
+  | 'validation_without_name'
+  | 'done_without_date'
+  | 'done_without_proof'
   | 'waiting_without_date'
+  | 'waiting_without_addressee'
   | 'journal_heading_without_date'
+  | 'journal_without_session'
+  | 'session_missing_point'
+  | 'journal_out_of_order'
+  | 'state_behind_journal'
+  | 'journal_behind_state'
+  | 'task_not_in_journal'
+  | 'decision_without_date'
+  | 'no_decision'
   | 'unreadable_frontmatter'
-  | 'no_decision_entry'
+
+/** An error breaks the format and fails the check command. A warning is content to complete */
+export type DossierGapSeverity = 'error' | 'warning'
 
 export interface DossierGap {
   source: 'plan' | 'journal' | 'decisions'
   kind: DossierGapKind
+  severity: DossierGapSeverity
   message: string
 }
 

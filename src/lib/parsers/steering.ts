@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import matter from 'gray-matter'
 import { exists } from '@/lib/fs'
+import { parseFrontmatter } from '@/lib/parsers/frontmatter'
 
 export interface SteeringDoc {
   type: 'product' | 'tech' | 'structure'
@@ -35,9 +35,7 @@ export async function parseSteering(projectPath: string): Promise<SteeringDoc[]>
 
     try {
       const raw = await readFile(filePath, 'utf-8')
-      // Called without options, gray-matter caches a text before parsing it. A second read of the
-      // same invalid frontmatter would then come back from the cache without throwing.
-      const { data, content } = matter(raw, {})
+      const { data, content } = parseFrontmatter(raw)
 
       // Extract first heading as title
       const headingMatch = content.match(/^#\s+(.+)/m)

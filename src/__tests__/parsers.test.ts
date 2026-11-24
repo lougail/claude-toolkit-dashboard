@@ -369,6 +369,20 @@ We decided to use JWT because...`
 
     expect(entries).toEqual([])
   })
+
+  it('should skip an entry whose frontmatter is written in JavaScript without running its code', async () => {
+    const vaultDir = join(TEST_DIR, 'vault6')
+    await mkdir(join(vaultDir, 'ideas'), { recursive: true })
+    await writeFile(
+      join(vaultDir, 'ideas', 'trapped.md'),
+      '---js\n{ title: (globalThis.__vaultTestRan = true, "x") }\n---\nContent'
+    )
+
+    const entries = await parseVault(vaultDir)
+
+    expect((globalThis as Record<string, unknown>).__vaultTestRan).toBeUndefined()
+    expect(entries).toEqual([])
+  })
 })
 
 // --- steering.ts ---
@@ -382,6 +396,20 @@ describe('parseSteering', () => {
 
     const docs = await parseSteering(projectDir)
 
+    expect(docs.find((doc) => doc.type === 'product')).toMatchObject({ exists: false, content: '' })
+  })
+
+  it('should report a doc whose frontmatter is written in JavaScript as unreadable without running its code', async () => {
+    const projectDir = join(TEST_DIR, 'steering-project-js')
+    await mkdir(join(projectDir, 'steering'), { recursive: true })
+    await writeFile(
+      join(projectDir, 'steering', 'product.md'),
+      '---js\n{ title: (globalThis.__steeringTestRan = true, "x") }\n---\n# Product'
+    )
+
+    const docs = await parseSteering(projectDir)
+
+    expect((globalThis as Record<string, unknown>).__steeringTestRan).toBeUndefined()
     expect(docs.find((doc) => doc.type === 'product')).toMatchObject({ exists: false, content: '' })
   })
 })

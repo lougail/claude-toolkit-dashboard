@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { mkdir, rm } from 'node:fs/promises'
+import { mkdir, rm, symlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { projectName, decodeProjectPath } from '@/lib/config'
@@ -21,6 +21,12 @@ describe('projectName', () => {
 
 describe('decodeProjectPath', () => {
   const TEST_ROOT = join(tmpdir(), 'decode-test-' + Date.now())
+  const HOME_DIR = join(TEST_ROOT, 'Users', 'louis')
+
+  /** The entry name Claude Code gives a working directory: every character that is not a letter or a digit becomes "-" */
+  function encodeAsClaudeCode(path: string): string {
+    return path.replace(/[^a-zA-Z0-9]/g, '-')
+  }
 
   beforeAll(async () => {
     // Create a realistic directory tree:
@@ -28,6 +34,11 @@ describe('decodeProjectPath', () => {
     // /tmp/decode-test-XXX/Users/louis/Developer/simple/
     await mkdir(join(TEST_ROOT, 'Users', 'louis', 'Developer', 'hello-mira'), { recursive: true })
     await mkdir(join(TEST_ROOT, 'Users', 'louis', 'Developer', 'simple'), { recursive: true })
+    // A hidden directory, a longer hidden directory that starts the same way,
+    // a name that starts with a hyphen, and a name with a dot and an underscore
+    await mkdir(join(HOME_DIR, '.tool'), { recursive: true })
+    await mkdir(join(HOME_DIR, '.tool-cache', 'sessions', '-42'), { recursive: true })
+    await mkdir(join(HOME_DIR, 'Developer', 'my_site.io'), { recursive: true })
   })
 
   afterAll(async () => {
@@ -67,6 +78,69 @@ describe('decodeProjectPath', () => {
     const encoded = TEST_ROOT.replace(/\//g, '-') + '-Users-louis-Developer-hello-mira'
     const result = await decodeProjectPath(encoded)
     expect(result).toBe(join(TEST_ROOT, 'Users', 'louis', 'Developer', 'hello-mira'))
+  })
+
+  it('should decode a hidden directory written with a double dash', async () => {
+    const hiddenDir = join(HOME_DIR, '.tool')
+
+    const result = await decodeProjectPath(encodeAsClaudeCode(hiddenDir))
+
+    expect(result).toBe(hiddenDir)
+  })
+
+  it('should back up from a hidden directory that leads nowhere to the longer one that matches', async () => {
+    const sessionsDir = join(HOME_DIR, '.tool-cache', 'sessions')
+
+    const result = await decodeProjectPath(encodeAsClaudeCode(sessionsDir))
+
+    expect(result).toBe(sessionsDir)
+  })
+
+  it('should decode a directory whose name starts with a hyphen', async () => {
+    const hyphenDir = join(HOME_DIR, '.tool-cache', 'sessions', '-42')
+
+    const result = await decodeProjectPath(encodeAsClaudeCode(hyphenDir))
+
+    expect(result).toBe(hyphenDir)
+  })
+
+  it('should decode a directory name holding a dot and an underscore', async () => {
+    const dottedDir = join(HOME_DIR, 'Developer', 'my_site.io')
+
+    const result = await decodeProjectPath(encodeAsClaudeCode(dottedDir))
+
+    expect(result).toBe(dottedDir)
+  })
+
+  it('should keep what matches no directory as one name when the project directory is gone', async () => {
+    const goneDir = join(HOME_DIR, 'Developer', 'gone-project')
+
+    const result = await decodeProjectPath(encodeAsClaudeCode(goneDir))
+
+    expect(result).toBe(goneDir)
+  })
+
+  it('should read the double dash of a directory that is gone as a hidden directory', async () => {
+    const goneHiddenDir = join(HOME_DIR, '.gone')
+
+    const result = await decodeProjectPath(encodeAsClaudeCode(goneHiddenDir))
+
+    expect(result).toBe(goneHiddenDir)
+  })
+
+  it('should search a directory once when symbolic links lead back to it', async () => {
+    // Both links point to the directory that holds them, so each level offers two ways down to the same place.
+    // Searching the directory again each time a path reaches it would follow hundreds of thousands of paths.
+    // The depth stays under the number of links a system accepts in one path, 32 on macOS.
+    const loopDir = join(HOME_DIR, 'loop')
+    await mkdir(loopDir, { recursive: true })
+    await symlink('.', join(loopDir, 'a'))
+    await symlink('.', join(loopDir, 'a-a'))
+    const goneDir = join(loopDir, ...Array<string>(28).fill('a'), 'gone')
+
+    const result = await decodeProjectPath(encodeAsClaudeCode(goneDir))
+
+    expect(result).toBe(goneDir)
   })
 })
 
