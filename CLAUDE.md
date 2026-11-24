@@ -4,20 +4,17 @@ Dashboard de visualisation pour le Claude Code Toolkit.
 
 ## Stack
 
-Next.js 16 (App Router, Turbopack) + React 19 + TypeScript strict + Tailwind 4 + Recharts + Lucide React
+Next.js 16 (App Router, Turbopack) + React 19 + TypeScript strict + Tailwind 4 + Lucide React
 
 ## Architecture
 
 ```
 src/
 ├── app/              # Pages (App Router)
-│   ├── activity/     # Vue activite
-│   ├── audits/       # Vue audits
-│   ├── decisions/    # Vue decisions
-│   ├── pipeline/     # Vue pipeline
-│   └── page.tsx      # Dashboard principal
+│   ├── api/config/   # Lecture et ecriture de la configuration
+│   ├── settings/     # Vue configuration
+│   └── page.tsx      # Accueil, liste des projets
 ├── components/       # Composants React
-│   ├── charts/       # Wrappers Recharts
 │   └── dashboard/    # Composants dashboard
 └── lib/              # Logique metier
     ├── config.ts     # Configuration

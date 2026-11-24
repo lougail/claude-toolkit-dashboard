@@ -16,6 +16,9 @@
 
 ---
 
+> [!NOTE]
+> **Rebuild in progress since November 2026.** The dashboard is becoming a cockpit that shows the dossier each project keeps (`PLAN.md`, `JOURNAL.md`, the decisions), in three screens. The Feature Pipeline, Metrics & Cost, Ralph Tracking, Decisions & Vault and project detail pages described below were removed on 24 November 2026, with `recharts` and `chokidar`. Today the home page lists the projects with their name and their path, and Settings works as described. This README will be rewritten once the three screens are in place. `PLAN.md` says where the rebuild stands.
+
 ## Why
 
 The Claude Code Toolkit generates structured data across all your projects: PRDs, vault entries, audit reports, session history, Ralph progress. But this data lives in scattered files with no unified view.
