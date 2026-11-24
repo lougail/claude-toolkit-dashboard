@@ -52,7 +52,8 @@ Sur la machine de Louis, la liste rendue par `discoverProjects` compte 88 entré
 - **La liste bouge dans la journée.** Le premier essai du matin comptait 103 entrées, et `~/.claude/projects` a changé entre les deux essais.
 - **Deux chemins étaient faux.** `decodeProjectPath` rendait `//` pour un répertoire caché comme `.claude`, et le dossier de ces entrées était cherché au mauvais endroit. Corrigé le 24 novembre, commit `b311f33`.
 - **La lecture des dossiers pèse peu dans le chargement.** La découverte prend 4 à 5 secondes, et la lecture de tous les dossiers y compte pour moins d'un dixième de seconde. Dans un essai sans réseau, où `gh` échoue tout de suite, la découverte prend 1,5 seconde.
-- **Le 24 novembre, la liste compte 100 entrées.** 28 répertoires existent, et deux ont un `PLAN.md` et un `JOURNAL.md`, ce dépôt et le projet pilote. Un projet sort deux fois, car son chemin diffère par ses majuscules entre `~/.claude/projects` et le disque.
+
+Relancée le 24 novembre, la découverte rend 100 entrées. 28 répertoires existent, et deux ont un `PLAN.md` et un `JOURNAL.md`, ce dépôt et le projet pilote. Un projet sort deux fois, car son chemin diffère par ses majuscules entre `~/.claude/projects` et le disque.
 
 ## Ce qui attend Louis
 
