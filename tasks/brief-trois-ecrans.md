@@ -84,7 +84,7 @@ Le 24 novembre, aucune page n'appelle `RalphTracker`, `TabBadge`, `deriveAlerts`
 | `src/lib/data/alerts.ts`, `src/lib/constants.ts` | Supprimés |
 | `src/lib/data/scanner.ts` | `discoverProjects` applique les règles de la liste. L'état de CI, le compte des PR, la branche, le score de santé, les sessions, `readTasks`, `collectAgentMessages` et `getDashboardMetrics` partent |
 | `src/lib/types.ts` | `Project` garde `name`, `path`, `encodedPath`, `lastActivity` et `dossier`, et gagne `isGitRepository: boolean`. Les types des lectures retirées partent |
-| `src/lib/utils.ts`, `src/lib/config.ts` | `formatTokenCount`, `estimateCost`, `formatCost`, `HISTORY_FILE` et `TASKS_DIR` partent |
+| `src/lib/utils.ts`, `src/lib/config.ts` | `formatRelativeTime`, `formatTokenCount`, `estimateCost`, `formatCost`, `HISTORY_FILE` et `TASKS_DIR` partent |
 | `src/app/page.tsx` | Affiche la liste rendue, un projet par ligne |
 | `src/__tests__/` | `parsers.test.ts` et `fixtures/valid-state.json` sont supprimés. `scanner.test.ts` couvre les règles de la liste. `config.test.ts` perd les tests de `estimateCost` et de `formatCost` |
 
