@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { homedir } from 'node:os'
-import { stat, readFile, writeFile, mkdir, readdir } from 'node:fs/promises'
+import { stat, readFile, writeFile, mkdir, readdir, realpath } from 'node:fs/promises'
 import type { DashboardConfig } from '@/lib/types'
 
 const home = homedir()
@@ -92,7 +92,7 @@ export async function decodeProjectPath(encoded: string): Promise<string | null>
   // Validate input: must start with "-" and have meaningful content
   if (!encoded.startsWith('-') || encoded.length < 2) return null
 
-  const deepest = await findDeepestDirectory('/', encoded.slice(1))
+  const deepest = await findDeepestDirectory('/', encoded.slice(1), new Set())
   const result =
     deepest.encodedRest === ''
       ? deepest.directory
@@ -106,18 +106,39 @@ export async function decodeProjectPath(encoded: string): Promise<string | null>
   return result
 }
 
-/** Follow the encoded text down the real directories, as far as it matches */
-async function findDeepestDirectory(directory: string, encodedRest: string): Promise<DecodedPrefix> {
+/**
+ * Follow the encoded text down the real directories, as far as it matches.
+ * A symbolic link can lead back to a directory already searched with the same text left to match.
+ * That search would end the same way, so each directory is searched once for a given text.
+ */
+async function findDeepestDirectory(
+  directory: string,
+  encodedRest: string,
+  searched: Set<string>
+): Promise<DecodedPrefix> {
   let deepest: DecodedPrefix = { directory, encodedRest }
   if (encodedRest === '') return deepest
 
+  const search = `${await resolveLinks(directory)}\0${encodedRest}`
+  if (searched.has(search)) return deepest
+  searched.add(search)
+
   for (const name of await findEncodedDirectories(directory, encodedRest)) {
     // Skip the name and the "-" that stands for the "/" after it
-    const reached = await findDeepestDirectory(join(directory, name), encodedRest.slice(name.length + 1))
+    const reached = await findDeepestDirectory(join(directory, name), encodedRest.slice(name.length + 1), searched)
     if (reached.encodedRest === '') return reached
     if (reached.encodedRest.length < deepest.encodedRest.length) deepest = reached
   }
   return deepest
+}
+
+/** The directory without its symbolic links, or the path as written when it cannot be resolved */
+async function resolveLinks(directory: string): Promise<string> {
+  try {
+    return await realpath(directory)
+  } catch {
+    return directory
+  }
 }
 
 /** The directories whose name the start of the encoded text can stand for, shortest name first */

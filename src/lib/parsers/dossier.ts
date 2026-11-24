@@ -109,17 +109,21 @@ const DECISION_FOLDERS = ['docs/decisions', 'vault/decisions']
 const QUOTED_TEXT_LIMIT = 60
 
 const COMBINING_MARKS = /[\u0300-\u036f]/g
+// The line breaks of Python's str.splitlines, which cuts the text for the check command
+const LINE_BREAK = /\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]/
 // A code fence opens with at least three backticks or tildes, optionally followed by a language name
 const CODE_FENCE = /^\s*(`{3,}|~{3,})(.*)$/
-// As in CommonMark, a heading may be indented by up to three spaces
-const HEADING = /^ {0,3}(#{1,6})\s+(.*?)\s*$/
+// As in CommonMark, a heading may be indented by up to three spaces. Its text runs to the end of the line
+const HEADING = /^ {0,3}(#{1,6})\s+(.*)/
 const BULLET_ITEM = /^[-*+]\s+(.*)$/
 const NUMBERED_ITEM = /^\d+[.)]\s+(.*)$/
 const INDENTED_LINE = /^\s+\S/
 const BOLD_START = /^\*\*(.+?)\*\*(.*)$/
-const TRAILING_PUNCTUATION = /[\s.:;,!?…]+$/
+// A pattern closed by "+$" opens with a lookbehind, so that it is tried once on each run of characters.
+// Without it, a long run that does not close the text is read again from each of its characters.
+const TRAILING_PUNCTUATION = /(?<![\s.:;,!?…])[\s.:;,!?…]+$/
 const TRAILING_PERIOD = /\.\s*$/
-const TRAILING_PERIODS = /\.+$/
+const TRAILING_PERIODS = /(?<!\.)\.+$/
 const TABLE_LINE = /^\s*\|/
 const TABLE_SEPARATOR = /^[\s|:-]+$/
 const TASK_NUMBER = /^\d+$/
@@ -130,7 +134,7 @@ const JOURNAL_NOTE = /^\d{4}-\d{2}-\d{2}\s*\((.*)\)/
 // A name stops at a comma, a semicolon, a colon, an opening parenthesis, or a period followed by a space or the end
 const NAME_END = /[,;:(]|\.(?=\s|$)/
 // Spaces and signs around the proof of a finished task
-const AROUND_PROOF = /^[\s,.;:\-–—]+|[\s,.;:\-–—]+$/g
+const AROUND_PROOF = /^[\s,.;:\-–—]+|(?<![\s,.;:\-–—])[\s,.;:\-–—]+$/g
 // The patterns below run on normalized text: lower case, without accents
 const REQUESTED_ON = /\bdemande le\s+/
 const VALIDATED_BY = /^a valider par\s+(?=\S)/
@@ -141,9 +145,10 @@ const TASK_REFERENCE = /\btaches?\s+(\d+(?:\s*(?:,|et)\s*\d+)*)/g
 // Decision headings such as "2026-11-20 — Title", "[2026-11-20] Title" or "ADR-005 — Title"
 const DECISION_DATE_PREFIX = /^\[?(\d{4}-\d{2}-\d{2})\]?\s*[—–:-]?\s*/
 const DECISION_ID_PREFIX = /^([A-Z]{2,}-\d+)\s*[—–:-]?\s*/
-// "**Date** : value" and "**Date :** value" are both written
-const DATE_FIELD = /\*\*date\s*:?\s*\*\*\s*:?\s*(.*)$/i
-const STATUS_FIELD = /\*\*statut\s*:?\s*\*\*\s*:?\s*(.*)$/i
+// "**Date** : value" and "**Date :** value" are both written. Spaces after a colon are only looked for
+// behind a colon: two runs of spaces side by side would share a long run of spaces in every possible way.
+const DATE_FIELD = /\*\*date\s*(?::\s*)?\*\*\s*(?::\s*)?(.*)$/i
+const STATUS_FIELD = /\*\*statut\s*(?::\s*)?\*\*\s*(?::\s*)?(.*)$/i
 const FIELD_SEPARATOR = ' · '
 
 interface Section {
@@ -168,7 +173,7 @@ function decodeLeniently(bytes: Buffer): string {
 interface JournalReading {
   entries: DossierJournalEntry[]
   /** Task numbers cited anywhere in the text of the dated sessions, headings left out */
-  citedTaskNumbers: number[]
+  citedTaskNumbers: Set<number>
 }
 
 /** A date read in a normalized text, with the position right after it */
@@ -554,19 +559,21 @@ function readWaitingItem(
 function parseJournal(text: string, gaps: DossierGap[]): JournalReading {
   if (isBlank(text)) {
     addGap(gaps, 'journal', 'empty_file', 'JOURNAL.md est vide.')
-    return { entries: [], citedTaskNumbers: [] }
+    return { entries: [], citedTaskNumbers: new Set() }
   }
 
   const lines = splitLines(text)
   checkTitle(lines, 'Journal', 'JOURNAL.md', 'journal', gaps)
   const sections = splitSections(lines, 2)
   const entries: DossierJournalEntry[] = []
-  const citedTaskNumbers: number[] = []
+  const citedTaskNumbers = new Set<number>()
   for (const section of sections) {
     const entry = readJournalEntry(section, gaps)
     if (entry !== null) {
       entries.push(entry)
-      citedTaskNumbers.push(...findTaskNumbers(section.lines.join('\n')))
+      for (const taskNumber of findTaskNumbers(section.lines.join('\n'))) {
+        citedTaskNumbers.add(taskNumber)
+      }
     }
   }
 
@@ -649,7 +656,7 @@ function checkPlanAgainstJournal(plan: DossierPlan | null, journal: JournalReadi
   }
 
   for (const task of plan.tasks) {
-    if (MOVED_STATUSES.includes(task.status) && !journal.citedTaskNumbers.includes(task.number)) {
+    if (MOVED_STATUSES.includes(task.status) && !journal.citedTaskNumbers.has(task.number)) {
       addGap(
         gaps,
         'journal',
@@ -680,26 +687,25 @@ function readPoint(item: string, place: string, source: GapSource, gaps: Dossier
 
 /** Task numbers cited as "tâche 1" or "tâches 2 et 3", in order of appearance and without duplicates */
 function findTaskNumbers(text: string): number[] {
-  const numbers: number[] = []
+  // A set keeps the order in which the numbers were added
+  const numbers = new Set<number>()
   for (const reference of normalizeText(text).matchAll(TASK_REFERENCE)) {
     for (const digits of reference[1].match(/\d+/g) ?? []) {
-      const taskNumber = Number(digits)
-      if (!numbers.includes(taskNumber)) {
-        numbers.push(taskNumber)
-      }
+      numbers.add(Number(digits))
     }
   }
-  return numbers
+  return [...numbers]
 }
 
 // --- Decisions ---
 
 async function readDecisions(projectPath: string, gaps: DossierGap[]): Promise<DossierDecision[]> {
-  const decisions: DossierDecision[] = []
+  // The lists are joined with concat: spread into push, a very long list would exceed what one call accepts
+  let decisions: DossierDecision[] = []
   for (const folder of DECISION_FOLDERS) {
-    decisions.push(...(await readDecisionFolder(projectPath, folder, gaps)))
+    decisions = decisions.concat(await readDecisionFolder(projectPath, folder, gaps))
   }
-  decisions.push(...(await readDecisionsFile(projectPath, gaps)))
+  decisions = decisions.concat(await readDecisionsFile(projectPath, gaps))
   if (decisions.length === 0) {
     addGap(
       gaps,
@@ -894,7 +900,7 @@ function compareNewestFirst(a: string | null, b: string | null): number {
 
 /** Split text into lines, leaving out fenced code blocks so that nothing written inside them is read */
 function splitLines(text: string): string[] {
-  return withoutFencedCode(text.split(/\r?\n/))
+  return withoutFencedCode(text.split(LINE_BREAK))
 }
 
 /** A block runs from its opening fence to a closing fence of the same sign, at least as long, or to the end */
@@ -1042,7 +1048,7 @@ function isHeading(line: string): boolean {
 
 function headingText(line: string): string {
   const heading = HEADING.exec(line)
-  return heading === null ? '' : heading[2]
+  return heading === null ? '' : heading[2].trimEnd()
 }
 
 /** Split lines into the sections opened by headings of the given level. A higher-level heading closes the current section */

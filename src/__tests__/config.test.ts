@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { mkdir, rm } from 'node:fs/promises'
+import { mkdir, rm, symlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { projectName, decodeProjectPath } from '@/lib/config'
@@ -126,6 +126,21 @@ describe('decodeProjectPath', () => {
     const result = await decodeProjectPath(encodeAsClaudeCode(goneHiddenDir))
 
     expect(result).toBe(goneHiddenDir)
+  })
+
+  it('should search a directory once when symbolic links lead back to it', async () => {
+    // Both links point to the directory that holds them, so each level offers two ways down to the same place.
+    // Searching the directory again each time a path reaches it would follow hundreds of thousands of paths.
+    // The depth stays under the number of links a system accepts in one path, 32 on macOS.
+    const loopDir = join(HOME_DIR, 'loop')
+    await mkdir(loopDir, { recursive: true })
+    await symlink('.', join(loopDir, 'a'))
+    await symlink('.', join(loopDir, 'a-a'))
+    const goneDir = join(loopDir, ...Array<string>(28).fill('a'), 'gone')
+
+    const result = await decodeProjectPath(encodeAsClaudeCode(goneDir))
+
+    expect(result).toBe(goneDir)
   })
 })
 

@@ -244,6 +244,28 @@ describe('readDossier files', () => {
     expect(dossier.plan?.waiting[0]?.requestedOn).toBe('2026-11-22')
     expect(gapsOf(dossier, 'plan')).toEqual([])
   })
+
+  // The check command cuts the text with Python's str.splitlines, which breaks a line on each of these
+  it.each([
+    ['a lone carriage return', '\r'],
+    ['a vertical tab', '\v'],
+    ['a form feed', '\f'],
+    ['a file separator', '\x1c'],
+    ['a group separator', '\x1d'],
+    ['a record separator', '\x1e'],
+    ['a next line character', '\x85'],
+    ['a line separator', '\u2028'],
+    ['a paragraph separator', '\u2029'],
+  ])('should read a plan whose lines end with %s', async (_name, lineBreak) => {
+    const lfPlan = planFile(stateSection(), tasksSection(), waitingSection('1. Ouvrir la page. Demandé le 22 novembre.'))
+
+    const dossier = await readDossierOf({ 'PLAN.md': lfPlan.replaceAll('\n', lineBreak) })
+
+    expect(dossier.plan?.stateDate).toBe('2026-11-22')
+    expect(dossier.plan?.tasks[0]?.title).toBe('Voir la liste')
+    expect(dossier.plan?.waiting[0]?.requestedOn).toBe('2026-11-22')
+    expect(gapsOf(dossier, 'plan')).toEqual([])
+  })
 })
 
 // --- Severity ---
@@ -1737,5 +1759,53 @@ describe('readDossier fenced code blocks', () => {
     )
 
     expect(journal.map((entry) => entry.date)).toEqual(['2026-11-22'])
+  })
+})
+
+// --- Long lines ---
+
+describe('readDossier long lines', () => {
+  const LONG_RUN = 100_000
+  const spaces = ' '.repeat(LONG_RUN)
+  const periods = '.'.repeat(LONG_RUN)
+
+  // A pattern that retries a long run of characters from each one of them would take over ten seconds here
+  it.each<[string, Record<string, string>]>([
+    ['a session heading holding a long run of spaces', { 'JOURNAL.md': journalFile(sessionSection(`2026-11-22 x${spaces}y`)) }],
+    ['a point label holding a long run of periods', { 'JOURNAL.md': journalFile(section('2026-11-22', `- **Fait${periods}x** La liste.`)) }],
+    ['a proof holding a long run of spaces', { 'PLAN.md': planWithTasks([taskRow({ status: `fait le 12 novembre, a${spaces}b` })]) }],
+    ['a date field holding a long run of spaces', { 'DECISIONS.md': `# Décisions\n\n## Garder un seul fichier\n\n**date${spaces}x\n` }],
+    ['a status field holding a long run of spaces', { 'DECISIONS.md': `# Décisions\n\n## Garder un seul fichier\n\n**statut${spaces}x\n` }],
+  ])('should read %s in under a second', async (_name, files) => {
+    const projectDir = await createProject(files)
+    const start = performance.now()
+
+    await readDossier(projectDir)
+
+    expect(performance.now() - start).toBeLessThan(1000)
+  })
+})
+
+// --- Long lists ---
+
+describe('readDossier long lists', () => {
+  // Spread into the arguments of one function call, a list of this size makes the call fail
+  const LONG_LIST = 130_000
+
+  it('should read a session that cites more task numbers than a function call takes arguments', async () => {
+    const numbers = Array.from({ length: LONG_LIST }, (_, index) => index + 1)
+
+    const { journal } = await readJournalOf(journalFile(section('2026-11-22', `- **Fait.** Les tâches ${numbers.join(', ')}.`)))
+
+    expect(journal[0]?.points[0]?.taskNumbers).toHaveLength(LONG_LIST)
+  })
+
+  it('should read more decisions than a function call takes arguments', async () => {
+    const headings = Array.from({ length: LONG_LIST }, (_, index) => `## 2026-11-10 — Décision ${index + 1}`)
+
+    const { decisions, gaps } = await readDecisionsOf({ 'DECISIONS.md': ['# Décisions', ...headings].join('\n\n') + '\n' })
+
+    expect(decisions).toHaveLength(LONG_LIST)
+    expect(gaps).toEqual([])
   })
 })
