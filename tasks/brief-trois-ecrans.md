@@ -1,9 +1,9 @@
 # Brief — Refaire le dashboard en trois écrans
 
-> **Statut :** à valider par Louis
+> **Statut :** validé par Louis le 24 novembre 2026
 > **Date :** 2026-11-24
 > **Tâche du plan :** 7, dans `PLAN.md`
-> **Décision :** `vault/decisions/2026-11-22-dashboard-poste-de-pilotage.md`
+> **Décisions :** `vault/decisions/2026-11-22-dashboard-poste-de-pilotage.md` pour la direction, `vault/decisions/2026-11-24-sept-choix-des-trois-ecrans.md` pour les sept choix
 
 ## But
 
@@ -18,7 +18,7 @@ Le lecteur du dossier existe (tâches 2 et 5), et chaque projet de la liste port
 - **Fini quand.** Un matin, Louis ouvre le dashboard et dit quoi faire sur chaque projet sans ouvrir de conversation. Un `PLAN.md` abîmé affiche un message sur sa carte, et le reste de la page s'affiche.
 - **Plus petite solution.** Trois écrans en lecture seule, nourris par le lecteur du dossier et par git. Les anciennes pages partent d'abord, selon la règle « alléger d'abord, ajouter ensuite » de la page de vision.
 - **Hors périmètre.** Les réglages d'un projet (tâche 9), le travail à plusieurs (tâche 8), et tout ce qui écrit dans un dossier ou ouvre une session. La liste est à la fin de ce brief.
-- **Décisions prises.** Louis a validé la direction et les trois écrans le 22 novembre. Depuis le 23 novembre, l'agent fusionne une PR vérifiée puis rend compte. Les sept choix de ce brief attendent Louis.
+- **Décisions prises.** Louis a validé la direction et les trois écrans le 22 novembre. Depuis le 23 novembre, l'agent fusionne une PR vérifiée puis rend compte. Louis a validé les sept choix de ce brief le 24 novembre.
 
 ## Relevé du 24 novembre
 
@@ -34,9 +34,9 @@ Relevé sur la machine de Louis, au commit `3585f1f`, depuis une session sans r�
 - **Le poids du retrait.** Les fichiers que suppriment les morceaux 1 et 2 pèsent 69 203 et 32 502 caractères.
 - **Les contrôles.** `pnpm exec vitest run` compte 283 tests dans 5 fichiers. `tsc`, ESLint et la commande de contrôle du dossier passent.
 
-## Choix à valider par Louis
+## Choix validés par Louis
 
-Un « ok » les valide tous. Pour en changer un, Louis donne son numéro.
+Louis les a validés tous les sept par un « ok », le 24 novembre.
 
 1. **Ce qui part.** Toutes les pages actuelles partent, sauf Settings. La décision du 22 novembre nomme Pipeline, Audits et la lecture de `state.json`. S'y ajoutent Overview, Activity, Decisions & Vault, la page actuelle d'un projet, les graphiques de tokens, le score de santé, les steering docs et le suivi de Ralph. Codex et Claude Code montrent déjà les sessions, et ccusage compte les tokens.
 2. **Les projets affichés.** Un projet est un répertoire qui existe, affiché une seule fois même quand deux chemins y mènent. Les projets qui ont un dossier viennent en premier. Les dépôts git sans dossier suivent dans une liste repliée. Les autres répertoires sortent de la liste. Sur le relevé, 101 entrées donnent 10 projets, 2 avec un dossier et 8 sans.
@@ -325,7 +325,7 @@ Pour les morceaux 2 à 5, un fichier de test temporaire lance les fonctions du m
 
 ## Trois ajouts possibles
 
-Louis choisit ceux qu'il veut. Sans réponse, le travail part sans eux.
+Louis choisit ceux qu'il veut. Sans réponse, le travail part sans eux. Son « ok » du 24 novembre n'en nomme aucun, donc le premier morceau part sans eux.
 
 1. **Un relevé de trois matins.** Chaque matin, Louis ouvre « À toi » et note s'il a su quoi faire sans ouvrir de conversation. C'est la mesure du « Fini quand » de la tâche.
 2. **Une cible de temps.** « À toi » répond en moins de 2 secondes sur la machine de Louis, et un morceau qui la manque le dit.
