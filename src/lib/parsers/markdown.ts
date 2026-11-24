@@ -1,6 +1,6 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { join, basename } from 'node:path'
-import matter from 'gray-matter'
+import { parseFrontmatter } from '@/lib/parsers/frontmatter'
 import type { VaultEntry } from '@/lib/types'
 
 /**
@@ -9,9 +9,7 @@ import type { VaultEntry } from '@/lib/types'
 async function parseMarkdownFile(filePath: string): Promise<VaultEntry | null> {
   try {
     const raw = await readFile(filePath, 'utf-8')
-    // Called without options, gray-matter caches a text before parsing it. A second read of the
-    // same invalid frontmatter would then come back from the cache without throwing.
-    const { data, content } = matter(raw, {})
+    const { data, content } = parseFrontmatter(raw)
 
     // Extract date from frontmatter or filename (YYYY-MM-DD-slug.md pattern)
     // gray-matter turns an unquoted YAML date (date: 2026-06-19) into a Date object

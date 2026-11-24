@@ -1,7 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
 import { basename, extname, join, resolve } from 'node:path'
-import matter from 'gray-matter'
+import { parseFrontmatter } from '@/lib/parsers/frontmatter'
 import type {
   Dossier,
   DossierDecision,
@@ -771,9 +771,7 @@ function readFrontmatter(
   gaps: DossierGap[]
 ): { data: Record<string, unknown>; content: string } {
   try {
-    // Called without options, gray-matter caches a text before parsing it. A second read of the
-    // same invalid text would then come back from the cache without throwing, and lose its gap.
-    const { data, content } = matter(text, {})
+    const { data, content } = parseFrontmatter(text)
     return { data, content }
   } catch {
     addGap(

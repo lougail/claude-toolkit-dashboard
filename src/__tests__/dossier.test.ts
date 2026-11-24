@@ -1644,6 +1644,17 @@ describe('readDossier decisions', () => {
     expect(kindsOf(gapsOf(dossier, 'decisions'))).toEqual(['unreadable_frontmatter'])
   })
 
+  it('should read a decision whose frontmatter is written in JavaScript without running its code', async () => {
+    const { decisions, gaps } = await readDecisionsOf({
+      'vault/decisions/piegee.md':
+        '---js\n{ title: (globalThis.__dossierTestRan = true, "x") }\n---\n\n# Garder une seule base\n\n**Date** : 2026-11-10\n',
+    })
+
+    expect((globalThis as Record<string, unknown>).__dossierTestRan).toBeUndefined()
+    expect(decisions[0]?.title).toBe('Garder une seule base')
+    expect(kindsOf(gaps)).toEqual(['unreadable_frontmatter'])
+  })
+
   it('should return the decision files of the same date from the highest file name to the lowest', async () => {
     const { decisions } = await readDecisionsOf({
       'docs/decisions/001-liste.md': '# ADR-001 — Afficher la liste\n\n**Date** : 2026-11-22\n',
