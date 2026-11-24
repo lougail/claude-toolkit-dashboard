@@ -50,13 +50,13 @@ Louis les a validés tous les sept par un « ok », le 24 novembre.
 
 Chaque morceau part d'une branche `codex/`, finit par une PR et cite la tâche dans l'objet de ses commits, par exemple `Remove the pages of the V4 toolkit (task 7)`.
 
-| # | Morceau | Fini quand |
-|---|---|---|
-| 1 | **Retirer les anciennes pages.** | `/` et `/settings` répondent 200, et `/pipeline`, `/audits`, `/activity` et `/decisions` répondent 404. |
-| 2 | **Retirer leurs lectures et resserrer la liste.** | Sur la machine de Louis, la liste rend les seuls projets à afficher, 10 au relevé, sans lancer `gh`. |
-| 3 | **L'écran « À toi ».** | L'accueil affiche les lignes en attente de ce dépôt et du projet pilote, la demande la plus ancienne en haut. Sans aucune ligne, il affiche « Rien ne t'attend. » |
-| 4 | **L'écran « Projets ».** | Chaque projet a sa carte, avec son état, sa suite, son dernier passage et ses lignes en attente. Un `PLAN.md` abîmé affiche un message sur sa carte, et le reste de la page s'affiche. |
-| 5 | **La page d'un projet.** | Sur ce dépôt, la tâche 5 affiche ses points du journal, les deux commits qui la citent et sa preuve retrouvée dans git. Sur un dossier d'essai, un commit donné pour preuve et absent du dépôt est signalé. |
+| # | Morceau | Fini quand | État |
+|---|---|---|---|
+| 1 | **Retirer les anciennes pages.** | `/` et `/settings` répondent 200, et `/pipeline`, `/audits`, `/activity` et `/decisions` répondent 404. | fait le 24 novembre, PR n°4 |
+| 2 | **Retirer leurs lectures et resserrer la liste.** | Sur la machine de Louis, la liste rend les seuls projets à afficher, 10 au relevé, sans lancer `gh`. | à faire |
+| 3 | **L'écran « À toi ».** | L'accueil affiche les lignes en attente de ce dépôt et du projet pilote, la demande la plus ancienne en haut. Sans aucune ligne, il affiche « Rien ne t'attend. » | à faire |
+| 4 | **L'écran « Projets ».** | Chaque projet a sa carte, avec son état, sa suite, son dernier passage et ses lignes en attente. Un `PLAN.md` abîmé affiche un message sur sa carte, et le reste de la page s'affiche. | à faire |
+| 5 | **La page d'un projet.** | Sur ce dépôt, la tâche 5 affiche ses points du journal, les deux commits qui la citent et sa preuve retrouvée dans git. Sur un dossier d'essai, un commit donné pour preuve et absent du dépôt est signalé. | à faire |
 
 Une fonction, un type ou une constante que plus rien n'appelle part dans le morceau qui lui retire son dernier appel.
 
@@ -336,3 +336,18 @@ Louis choisit ceux qu'il veut. Sans réponse, le travail part sans eux. Son « o
 - **La commande suit le lecteur.** Le projet `.claude` a aligné sa commande le 24 novembre (commit `731e5f0` du toolkit). Relancée le soir même, la comparaison concorde sur ses 16 dossiers d'essai.
 - **Trois en-têtes YAML divergent.** Le lecteur date du 2 mars une décision dont l'en-tête écrit `date: 2026-02-30`. Les trois cas sont dans `tasks/ecarts-format-dossier.md`, écarts 12 à 14.
 - **Le dossier d'exemple a changé.** Celui du toolkit porte maintenant un `AGENTS.md` avec ses réglages. La copie de `src/__tests__/fixtures/dossier/valid/` le recevra avec la tâche 9.
+
+## Livré
+
+### Morceau 1, le 24 novembre
+
+Le retrait est dans la PR n°4, fusionnée dans `main` par le commit `b367efe`. Elle porte deux commits, `0585707` pour le retrait et `56ba104` pour la documentation.
+
+- **Fichiers.** Vingt fichiers sont supprimés sous `src/app/` et `src/components/`. `src/app/page.tsx` et `sidebar.tsx` sont allégés. `recharts` et `chokidar` sortent de `package.json`, et `pnpm-lock.yaml` perd 280 lignes.
+- **Contrôles.** `pnpm exec vitest run` compte 283 tests dans 5 fichiers. `tsc`, ESLint et la commande de contrôle du dossier passent. Le diff pèse 120 180 caractères. `pnpm build` passe et liste quatre routes.
+- **Essai sur la vraie machine.** `/` et `/settings` répondent 200. `/pipeline`, `/audits`, `/activity`, `/decisions`, `/project/abc` et les trois routes d'API retirées répondent 404. Dans un navigateur, l'accueil liste 16 projets pour 101 entrées, et la console ne montre aucune erreur.
+- **Revue.** Le robot a rendu trois remarques sur la documentation, qui décrivait encore les pages retirées et Recharts. `CLAUDE.md`, `steering/tech.md` et `steering/structure.md` sont corrigés, et `README.md` porte une note en tête. Le robot demandait aussi de rétablir les pages, ce que la décision du 24 novembre écarte.
+- **Choix faits.** `src/lib/` reste intact, comme le prévoit le tableau du morceau 2. `getDashboardMetrics`, `parseSteering`, les fonctions de tokens, `constants.ts` et `formatRelativeTime` restent donc sans appel jusque-là. L'accueil garde son titre « Overview » et perd son sous-titre. Un projet de la liste devient un simple élément de liste, car son lien menait à la page retirée.
+- **Écart.** Ce brief gardait `README.md` et `CLAUDE.md` pour le morceau 5. La revue a mené à corriger dès ce morceau les lignes devenues fausses.
+- **Non vérifié.** L'enregistrement de Settings n'a pas été rejoué. Son code ne change pas, et un enregistrement écrit la configuration de Louis. Les captures (l'accueil sur un écran large et sur un écran étroit, Settings sur un écran large) sont en thème sombre, le seul thème des pages actuelles.
+- **Pour la suite.** Sur un écran étroit, la barre latérale fixe laisse peu de place à la liste, comme avant ce morceau. Après le retrait d'une page, `tsc` échoue jusqu'à la régénération des types de routes (`vault/insights/2026-11-24-types-de-routes-next.md`).
