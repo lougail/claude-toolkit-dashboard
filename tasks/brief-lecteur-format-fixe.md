@@ -1,6 +1,6 @@
 # Brief — Ajuster le lecteur au format fixé
 
-> **Statut :** à faire
+> **Statut :** livré le 24 novembre 2026, commit `7064465` sur la branche `codex/fixed-dossier-format`
 > **Date :** 2026-11-23
 > **Tâche du plan :** 5, dans `PLAN.md`
 > **Décision :** `vault/decisions/2026-11-22-dashboard-poste-de-pilotage.md`
@@ -200,3 +200,16 @@ Un essai sur la vraie machine s'y ajoute. Un fichier de test temporaire lit avec
 - Chaque texte que le lecteur et la commande lisent différemment à la fin du travail, avec le texte en cause, les deux lectures et celle qui paraît juste.
 - Les choix faits là où ce brief se tait, et tout écart par rapport à lui.
 - Ce qui reste douteux ou non vérifié.
+
+## Livré le 24 novembre
+
+L'ajustement est dans le commit `7064465`. Un agent Opus 5-5 l'a écrit à partir de ce brief, et l'agent principal l'a contrôlé avant de l'enregistrer.
+
+- **Tests.** `pnpm exec vitest run` compte 255 tests dans 4 fichiers, dont 194 pour le lecteur. `tsc` et ESLint passent.
+- **Essai sur la vraie machine.** Sur le dossier d'exemple, sur ce dépôt et sur le projet pilote, le lecteur et la commande rendent le même nombre d'erreurs et de points à compléter. Appelé pour de vrai, `discoverProjects` rend 100 entrées, et aucun chemin ne porte de `//`.
+- **Trois écarts par rapport au brief.** Ils suivent la commande.
+  - Un `PLAN.md` ou un `JOURNAL.md` qui n'est pas en UTF-8 valide est dit illisible. La règle 19 ne parlait que des erreurs du système de fichiers.
+  - Une décision atteinte par un lien symbolique est lue.
+  - Dans `DECISIONS.md`, les titres de niveau 3 écrits hors de toute section de niveau 2 ne sont plus lus. Le lecteur les lisait avant.
+- **Écarts avec la commande.** Dix textes rares se lisent encore différemment. Ils sont dans `tasks/ecarts-format-dossier.md`, avec les deux lectures et une proposition.
+- **Limite.** Quatre tests retirent un droit de lecture avec `chmod`. Lancés par le compte root, ils échoueraient.
