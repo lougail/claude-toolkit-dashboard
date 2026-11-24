@@ -46,6 +46,11 @@ const CODE_DIR = join(FAKE_HOME, 'code')
 const COMPLETE_FIXTURE = fileURLToPath(new URL('./fixtures/dossier/complete', import.meta.url))
 /** Decisions read from the complete fixture: DECISIONS.md, docs/decisions and vault/decisions together */
 const DECISION_COUNT = 7
+/** Gaps of the complete fixture: a finished task the journal does not cite, and an undated decision */
+const COMPLETE_GAPS: Array<[string, string]> = [
+  ['journal', 'task_not_in_journal'],
+  ['decisions', 'decision_without_date'],
+]
 
 beforeEach(async () => {
   await rm(FAKE_HOME, { recursive: true, force: true })
@@ -141,7 +146,7 @@ describe('discoverProjects dossier', () => {
     expect(dossier.plan?.tasks.map((task) => task.number)).toEqual([1, 2, 3])
     expect(dossier.journal?.map((entry) => entry.date)).toEqual(['2026-11-22', '2026-07-03'])
     expect(dossier.decisions).toHaveLength(DECISION_COUNT)
-    expect(dossier.gaps).toEqual([])
+    expect(gapsOf(dossier)).toEqual(COMPLETE_GAPS)
   })
 
   it('should attach a null plan and a missing_file gap when PLAN.md is absent', async () => {
@@ -151,7 +156,10 @@ describe('discoverProjects dossier', () => {
     const { dossier } = await discoverProject(projectPath)
 
     expect(dossier.plan).toBeNull()
-    expect(gapsOf(dossier)).toEqual([['plan', 'missing_file']])
+    expect(gapsOf(dossier)).toEqual([
+      ['plan', 'missing_file'],
+      ['decisions', 'decision_without_date'],
+    ])
   })
 
   it('should still attach the journal and the decisions when PLAN.md is absent', async () => {
@@ -172,14 +180,17 @@ describe('discoverProjects dossier', () => {
 
     const { dossier } = await discoverProject(projectPath)
 
-    expect(gapsOf(dossier)).toEqual([['plan', 'missing_section']])
+    expect(gapsOf(dossier)).toEqual([
+      ['plan', 'missing_section'],
+      ['decisions', 'decision_without_date'],
+    ])
     expect(dossier.plan?.stateDate).toBe('2026-11-22')
     expect(dossier.plan?.waiting).toHaveLength(2)
     expect(dossier.journal).toHaveLength(2)
     expect(dossier.decisions).toHaveLength(DECISION_COUNT)
   })
 
-  it('should report a missing_file gap for PLAN.md and JOURNAL.md when the project has no dossier file', async () => {
+  it('should report a missing_file gap for PLAN.md and JOURNAL.md and no decision when the project has no dossier file', async () => {
     const projectPath = await createProject('garden')
 
     const { dossier } = await discoverProject(projectPath)
@@ -188,10 +199,11 @@ describe('discoverProjects dossier', () => {
     expect(gapsOf(dossier)).toEqual([
       ['plan', 'missing_file'],
       ['journal', 'missing_file'],
+      ['decisions', 'no_decision'],
     ])
   })
 
-  it('should report a missing_file gap for PLAN.md and JOURNAL.md when the registered directory has disappeared', async () => {
+  it('should report a missing_file gap for PLAN.md and JOURNAL.md and no decision when the registered directory has disappeared', async () => {
     const projectPath = join(CODE_DIR, 'gone')
     await registerProject(projectPath)
 
@@ -201,6 +213,7 @@ describe('discoverProjects dossier', () => {
     expect(gapsOf(dossier)).toEqual([
       ['plan', 'missing_file'],
       ['journal', 'missing_file'],
+      ['decisions', 'no_decision'],
     ])
   })
 
