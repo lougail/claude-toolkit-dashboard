@@ -13,7 +13,7 @@
 - **Fait.** Le dashboard construit en avril 2026 pour la V4 du toolkit. Ses six pages lisent `.claude/state.json`, `vault/`, les sessions de Claude Code, git et `gh`. La correction d'une date mal lue est enregistrée (tâche 1). Le lecteur du dossier est écrit (tâche 2), et chaque projet de la liste porte son dossier lu (tâche 3). Le lecteur suit le format fixé le 23 novembre. Sur le dossier d'exemple du toolkit, sur ce dépôt et sur le projet pilote, il rend le même verdict que la commande de contrôle (tâche 5). Les chemins des répertoires cachés, comme `.claude`, se décodent au bon endroit. Un en-tête écrit en JavaScript n'est plus exécuté à la lecture d'une décision, d'une note du vault ou d'un steering doc.
 - **Constaté.** Lancé le 22 novembre sur les vraies données de Louis. Overview, Decisions, Audits, Activity et Settings répondent sans erreur. Pipeline renvoie une erreur 500, car les anciens `state.json` n'ont pas le champ `ralph`. Activity affiche 0 token, car elle lit seulement les fichiers des sous-agents. Ces deux défauts restent jusqu'à la tâche 7. Relancées le 24 novembre, les six pages rendent les mêmes codes de réponse. Aucune page n'affiche encore le dossier lu.
 - **Périmé.** Pipeline, Audits et la lecture de `state.json` affichent ce qu'écrivaient les commandes de la V4 (`/prd`, `/ralph`, `/audit`), retirées par la refonte du toolkit. Les trois `state.json` qui restent datent de mai à août.
-- **En cours.** L'essai du format sur le projet pilote court jusqu'au 29 novembre (tâche 4). Ce dépôt tient son journal depuis le 24 novembre et passe la commande de contrôle. La tâche 6 attend que Louis lise les deux plans.
+- **En cours.** L'essai du format sur le projet pilote court jusqu'au 29 novembre (tâche 4). Ce dépôt tient son journal depuis le 24 novembre et passe la commande de contrôle. La tâche 6 attend que Louis lise les deux plans. Le brief de la tâche 7 est écrit et attend son accord (`tasks/brief-trois-ecrans.md`).
 
 ## Direction
 
@@ -21,7 +21,7 @@ Le dashboard devient le poste de pilotage décrit dans la page de vision du tool
 
 Les applications Codex et Claude Code montrent déjà les sessions et les diffs, et des outils gratuits comme ccusage comptent les tokens. Le dashboard montre le projet dans la durée, quel que soit l'assistant qui y travaille.
 
-Le dashboard vaut ce que valent ces fichiers. Leur format s'est donc fixé avant les écrans. Le projet `.claude` le décrit depuis le 23 novembre et le contrôle par une commande. Le lecteur (tâches 2 et 5) lit ce format et range chaque manque en erreur ou en point à compléter, comme la commande. Les textes rares que les deux lisent encore différemment sont notés dans `tasks/ecarts-format-dossier.md`.
+Le dashboard vaut ce que valent ces fichiers. Leur format s'est donc fixé avant les écrans. Le projet `.claude` le décrit depuis le 23 novembre et le contrôle par une commande. Le lecteur (tâches 2 et 5) lit ce format et range chaque manque en erreur ou en point à compléter, comme la commande. Le projet `.claude` a aligné sa commande sur le lecteur le 24 novembre, et les deux concordent sur ses 16 dossiers d'essai. Trois en-têtes YAML rares se lisent encore différemment, notés dans `tasks/ecarts-format-dossier.md`.
 
 ## Prochaines tâches
 
@@ -33,8 +33,9 @@ Le dashboard vaut ce que valent ces fichiers. Leur format s'est donc fixé avant
 | 4 | **Laisser finir l'essai sur le projet pilote.** Le format de `PLAN.md` y est à l'essai jusqu'au 29 novembre. Le projet `.claude` tient le relevé dans `~/.claude/vault/ideas/essai-piece-1-*.md`. | Le relevé final du 29 novembre est écrit. | en cours |
 | 5 | **Fixer le format du dossier et son contrôle.** Ce travail se fait dans le projet `.claude`. Des titres fixes, une liste fermée d'états, une date et un nom sur chaque ligne en attente, le numéro de la tâche dans le journal et les commits, une preuve sur chaque tâche finie. Une commande lit le dossier d'un projet et signale ce qui manque ou ce qui est périmé. Le brief de l'ajustement du lecteur est dans `tasks/brief-lecteur-format-fixe.md`. | La commande passe sur le projet pilote et échoue sur une copie dont un titre est renommé. Le lecteur de la tâche 2 est ajusté au format fixé. | fait le 24 novembre, commit `7064465` |
 | 6 | **Poser le format sur un deuxième projet.** Ce dépôt est candidat. | La commande passe sur deux projets, et Louis dit où en est chacun en lisant son `PLAN.md` seul. | à valider par Louis |
-| 7 | **Refaire le dashboard en trois écrans.** « À toi », les projets, puis la page d'un projet avec ses tâches et, pour chacune, le journal, les commits, les décisions et la preuve. Pipeline, Audits et la lecture de `state.json` partent. | Un matin, Louis ouvre le dashboard et dit quoi faire sur chaque projet sans ouvrir de conversation. Un `PLAN.md` abîmé affiche un message sur sa carte, et le reste de la page s'affiche. | à faire |
+| 7 | **Refaire le dashboard en trois écrans.** « À toi », les projets, puis la page d'un projet avec ses tâches et, pour chacune, le journal, les commits, les décisions et la preuve. Pipeline, Audits et la lecture de `state.json` partent. Le brief est dans `tasks/brief-trois-ecrans.md`. | Un matin, Louis ouvre le dashboard et dit quoi faire sur chaque projet sans ouvrir de conversation. Un `PLAN.md` abîmé affiche un message sur sa carte, et le reste de la page s'affiche. | à faire |
 | 8 | **Le travail à plusieurs.** L'essai prévu à la question 6 de la page de vision, sur un projet mené à plusieurs. | L'essai est fait et sa conclusion est notée. | plus tard |
+| 9 | **Lire les réglages d'un projet.** Le lecteur lit la section « Réglages » des consignes d'un projet, comme la commande de contrôle, et cherche le dossier là où le réglage « Dossier » le range. | Sur les dossiers d'essai du toolkit qui portent des réglages, le lecteur rend le même verdict que la commande. Un projet dont le dossier vit dans un sous-dossier s'affiche avec ce dossier. | à faire |
 
 ## Relevé du 22 novembre, pour la tâche 5
 
@@ -57,9 +58,12 @@ Sur la machine de Louis, la liste rendue par `discoverProjects` compte 88 entré
 
 Relancée le 24 novembre, la découverte rend 100 entrées. 28 répertoires existent, et deux ont un `PLAN.md` et un `JOURNAL.md`, ce dépôt et le projet pilote. Un projet sort deux fois, car son chemin diffère par ses majuscules entre `~/.claude/projects` et le disque. Le décodeur de chemins compare les noms en respectant les majuscules. Une entrée dont un répertoire intermédiaire diffère par ses majuscules sortirait avec un chemin faux. Le 24 novembre, aucune des 99 entrées de `~/.claude/projects` n'est dans ce cas.
 
+Le relevé du 24 novembre au soir est dans `tasks/brief-trois-ecrans.md`. Sur 101 entrées, 10 sont des projets à afficher, 2 avec un dossier et 8 dépôts git sans dossier.
+
 ## Ce qui attend Louis
 
 L'agent propose la première ligne, attend la réponse, puis passe à la suivante.
 
 1. Lire le haut de ce fichier, jusqu'au tableau des tâches, et dire si tu sais où en est le projet. Faire la même lecture sur le plan du projet pilote. Cela valide la tâche 6. Demandé le 24 novembre, la réponse attendue est « clair », ou ce qui manque.
 2. Dire si le suivi de projet devient aussi un skill à publier (`vault/ideas/2026-11-23-suivi-de-projet-en-skill.md`). L'agent recommande « plus tard », après la fin de l'essai du format. Demandé le 24 novembre, la réponse attendue est « oui », « non » ou « plus tard ».
+3. Lire `tasks/brief-trois-ecrans.md`, au moins « Le contrat » et « Choix à valider par Louis », puis dire « ok » pour lancer le premier morceau de la tâche 7. Demandé le 24 novembre, la réponse attendue est « ok », ou le numéro du choix à changer.

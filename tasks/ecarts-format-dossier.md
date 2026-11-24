@@ -3,6 +3,7 @@
 > **Date :** 2026-11-24
 > **Pour :** le projet `.claude`, qui tient le format du dossier et sa commande de contrôle
 > **Versions comparées :** `scripts/check-dossier.py` au commit `8f6ca50` du toolkit, et `src/lib/parsers/dossier.ts` au commit `7064465` de ce dépôt, puis au commit `6d93aaa` pour les fins de ligne et l'écart 11
+> **Suite :** le toolkit a traité les écarts 1 à 11 le 24 novembre (commit `731e5f0`). Trois écarts sur les en-têtes YAML s'ajoutent, dans « Suite du 24 novembre » en bas de ce fichier
 
 Le lecteur du dashboard et la commande lisent le même dossier. Ce fichier liste les textes qu'ils lisent différemment, avec les deux lectures et celle que ce dépôt propose. Chaque écart a été rejoué le 24 novembre sur un dossier d'essai.
 
@@ -164,3 +165,58 @@ Dans `DECISIONS.md`, des décisions écrites en titres de niveau 3 sans aucun ti
 - **Git.** La commande compare la date de l'état au dernier commit et cherche le commit donné en preuve. Ces deux contrôles viendront dans le dashboard avec la tâche 7 du plan.
 - **Les réglages.** La copie de travail du toolkit lit une section « Réglages » dans les consignes du projet. Elle n'est pas enregistrée au commit `8f6ca50`. Le lecteur cherche toujours le dossier à la racine du projet, donc un projet qui le range ailleurs par le réglage « Dossier » sortira sans dossier dans le dashboard.
 - **Les messages.** Les manques qui existaient avant le 24 novembre gardent leur phrase d'avant, différente de celle de la commande. Les nouveaux reprennent la phrase de la commande.
+
+## Suite du 24 novembre
+
+Le projet `.claude` a aligné sa commande sur le lecteur dans le commit `731e5f0` du toolkit. Elle reprend la lecture du lecteur pour les écarts 1 à 7 et 9 à 11. L'écart 8 reste comme il était, avec un message différent de chaque côté.
+
+La comparaison a été relancée le 24 novembre au soir avec l'outil du toolkit, entre `scripts/check-dossier.py` au commit `731e5f0` et `src/lib/parsers/dossier.ts` au commit `3585f1f`. Sur ses 16 dossiers d'essai, les deux rendent le même nombre d'erreurs et de points à compléter.
+
+Trois écarts s'ajoutent, tous sur l'en-tête YAML d'un fichier de décision. Le compte rendu du toolkit les donnait pour possibles. Chacun a été rejoué le 24 novembre sur une copie du dossier d'exemple, dans un fichier `docs/decisions/001-sqlite.md`.
+
+### 12. Un en-tête YAML invalide
+
+```markdown
+---
+title: [unclosed
+date: 2026-03-10
+---
+# ADR-001 — Garder SQLite
+```
+
+- **Commande.** Elle prend la ligne `date:` sans lire le reste de l'en-tête. La décision est datée, et le dossier passe sans point à compléter.
+- **Lecteur.** Il signale l'en-tête illisible, lit la décision sans lui et la signale sans date. Il rend deux points à compléter.
+- **Proposition.** À trancher dans le format. La lecture du lecteur montre l'en-tête cassé à la personne qui tient le dossier. La bibliothèque standard de Python ne lit pas le YAML, donc la commande ne peut le signaler qu'avec une lecture écrite pour elle.
+
+### 13. Une date impossible dans l'en-tête
+
+```markdown
+---
+title: Garder SQLite
+date: 2026-02-30
+---
+# ADR-001 — Garder SQLite
+```
+
+- **Commande.** La décision est sans date. Elle rend un point à compléter.
+- **Lecteur.** La bibliothèque YAML reporte la date au 2 mars. La décision sort datée du `2026-03-02`, sans aucun manque.
+- **Proposition.** Le lecteur refuse une date absente du calendrier, comme la commande. Il affiche aujourd'hui une date que personne n'a écrite.
+
+### 14. Un en-tête ouvert par `---yaml`
+
+```markdown
+---yaml
+title: Garder SQLite
+date: 2026-03-10
+---
+# ADR-001 — Garder SQLite
+```
+
+- **Commande.** Elle attend `---` seul sur la première ligne et lit ce fichier sans en-tête. La décision est sans date, et elle rend un point à compléter.
+- **Lecteur.** gray-matter lit le mot qui suit `---` comme le nom du langage de l'en-tête. La décision est datée du 10 mars, sans aucun manque.
+- **Proposition.** La commande accepte `---yaml`, ou le format dit qu'un en-tête s'ouvre par `---` seul et le lecteur suit.
+
+### Ce que le lecteur ne lit toujours pas
+
+- **Git.** Les deux contrôles viennent avec le morceau 5 de la tâche 7 (`tasks/brief-trois-ecrans.md`).
+- **Les réglages.** Le toolkit les a enregistrés dans son commit `4b35368`. Le lecteur les lira avec la tâche 9 du plan. Le dossier d'exemple du toolkit porte maintenant un `AGENTS.md` avec ses réglages, absent de la copie de ce dépôt.

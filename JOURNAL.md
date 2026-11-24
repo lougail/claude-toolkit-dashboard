@@ -2,6 +2,12 @@
 
 > Trois points par séance. La séance la plus récente est en haut.
 
+## 2026-11-24 (soir)
+
+- **Fait.** Le brief de la tâche 7 est écrit (`tasks/brief-trois-ecrans.md`). Il découpe le travail en cinq morceaux, donne le relevé du jour et liste sept choix qui attendent Louis. La lecture des réglages d'un projet devient la tâche 9. Le fichier des écarts dit que le toolkit a aligné sa commande sur le lecteur (commit `731e5f0` du toolkit). Relancée, la comparaison concorde sur ses 16 dossiers d'essai.
+- **Appris.** Sur 101 entrées découvertes, 10 sont des projets à afficher, dont 2 avec un dossier. La liste se trie encore sur les sessions de Claude Code, où la dernière session de ce dépôt date de 235 jours. Les anciennes pages pèsent environ 100 000 caractères à supprimer, donc leur retrait prend deux PR sous la limite du robot de revue. Aucune décision des deux dossiers ne cite une tâche. Trois en-têtes YAML rares se lisent différemment dans le lecteur et dans la commande, et le lecteur date du 2 mars une décision datée du 30 février (`tasks/ecarts-format-dossier.md`, écarts 12 à 14).
+- **Bloque.** La tâche 7 attend l'accord de Louis sur le brief. La tâche 6 attend toujours sa lecture des deux plans.
+
 ## 2026-11-24
 
 - **Fait.** Le lecteur du dossier suit le format fixé. Il range chaque manque en erreur ou en point à compléter, comme la commande de contrôle. Sur le dossier d'exemple du toolkit, sur ce dépôt et sur le projet pilote, il rend le même verdict qu'elle (tâche 5, commit `7064465`). Les chemins des répertoires cachés se décodent au bon endroit (commit `b311f33`). Ce dépôt a son journal et passe la commande (tâche 6). Le robot de revue n'a pas relu la PR n°3, trop grande pour lui, et un second agent a relu la branche à sa place. Sa relecture a mené à deux commits. Un en-tête ouvert par `---js` n'est plus exécuté (commit `c6af56e`). Le lecteur et le décodeur de chemins ne se bloquent plus sur une longue ligne, une très longue liste ou une boucle de liens symboliques, et les lignes se coupent comme dans la commande (commit `6d93aaa`). Le tout est dans la PR n°3, fusionnée dans `main` (commit `052e4c2`).
